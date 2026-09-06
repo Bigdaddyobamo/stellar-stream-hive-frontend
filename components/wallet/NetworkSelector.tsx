@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useWallet } from "@/hooks/useWallet";
-import { NETWORK } from "@/lib/stellar";
+import { getFreighterNetworkDetails } from "@/lib/freighter";
+import { NETWORK, SOROBAN_RPC_URL } from "@/lib/stellar";
 
 /**
  * Displays the network the app is configured for, and warns loudly if the
@@ -10,10 +12,27 @@ import { NETWORK } from "@/lib/stellar";
  */
 export function NetworkSelector() {
   const wallet = useWallet();
+  const [rpcTooltip, setRpcTooltip] = useState(`This app talks to ${SOROBAN_RPC_URL}`);
+
+  useEffect(() => {
+    if (!wallet.isConnected) return;
+    let cancelled = false;
+    getFreighterNetworkDetails().then((details) => {
+      if (!cancelled && details?.sorobanRpcUrl) {
+        setRpcTooltip(`This app: ${SOROBAN_RPC_URL}\nFreighter: ${details.sorobanRpcUrl}`);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [wallet.isConnected]);
 
   return (
     <div className="flex items-center gap-2">
-      <span className="hidden items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted sm:inline-flex">
+      <span
+        className="hidden items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted sm:inline-flex"
+        title={rpcTooltip}
+      >
         <span className="h-1.5 w-1.5 rounded-full bg-primary" />
         {NETWORK}
       </span>
