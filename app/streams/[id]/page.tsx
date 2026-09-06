@@ -70,7 +70,10 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
       </div>
 
       <div className="card mb-6">
-        <p className="mb-1 text-xs text-muted">Stream #{stream.id}</p>
+        <div className="mb-1 flex items-center gap-1 text-xs text-muted">
+          <span>Stream #{stream.id}</span>
+          <CopyButton value={stream.id} label="Copy ID" />
+        </div>
         <LiveBalance
           totalAmount={stream.totalAmount}
           withdrawnAmount={stream.withdrawnAmount}
