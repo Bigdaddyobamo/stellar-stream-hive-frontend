@@ -55,6 +55,15 @@ export function ScheduleInput({
         ? "Cliff date must be between the start and end dates."
         : null;
 
+  // Not a hard error — a stream can legitimately start "now-ish" and this
+  // warning only fires once the start time has clearly slipped into the
+  // past — but worth flagging since the recipient would immediately have a
+  // partially-streamed balance the moment the stream is created.
+  const startInPastWarning =
+    !orderError && startDate.getTime() < Date.now() - 60_000
+      ? "Start date is in the past — the recipient will immediately see some balance already streamed."
+      : null;
+
   function ledgerLabel(date: Date): string {
     if (!reference) return "";
     const ledger = dateToEstimatedLedger(date, { ledger: reference.ledger, timestampMs: reference.timestampMs });
@@ -119,6 +128,7 @@ export function ScheduleInput({
       </div>
 
       {orderError && <p className="text-xs text-danger">{orderError}</p>}
+      {startInPastWarning && <p className="text-xs text-warning">{startInPastWarning}</p>}
     </div>
   );
 }
