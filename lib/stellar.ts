@@ -1,0 +1,83 @@
+/**
+ * Stellar / Soroban network configuration and low-level RPC helpers shared
+ * across the app: building a Soroban RPC server client, fetching the latest
+ * ledger, and validating Stellar addresses.
+ */
+import { rpc as SorobanRpc, Networks } from "@stellar/stellar-sdk";
+
+export const NETWORK = (process.env.NEXT_PUBLIC_STELLAR_NETWORK || "TESTNET") as
+  | "TESTNET"
+  | "PUBLIC"
+  | "FUTURENET";
+
+export const NETWORK_PASSPHRASE =
+  process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE ||
+  (NETWORK === "PUBLIC" ? Networks.PUBLIC : Networks.TESTNET);
+
+export const SOROBAN_RPC_URL =
+  process.env.NEXT_PUBLIC_SOROBAN_RPC_URL || "https://soroban-testnet.stellar.org";
+
+export const HORIZON_URL =
+  process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org";
+
+export const STELLAR_EXPERT_NETWORK: "testnet" | "public" = NETWORK === "PUBLIC" ? "public" : "testnet";
+
+let cachedServer: SorobanRpc.Server | null = null;
+
+/** Returns a memoized Soroban RPC server client for the configured network. */
+export function getSorobanServer(): SorobanRpc.Server {
+  if (!cachedServer) {
+    cachedServer = new SorobanRpc.Server(SOROBAN_RPC_URL, { allowHttp: SOROBAN_RPC_URL.startsWith("http://") });
+  }
+  return cachedServer;
+}
+
+export interface LedgerSnapshot {
+  ledger: number;
+  timestampMs: number;
+}
+
+/**
+ * Fetches the latest known ledger sequence from the Soroban RPC endpoint,
+ * paired with the local timestamp it was observed at — used as the reference
+ * point for client-side ledger estimation between re-syncs.
+ */
+export async function fetchLatestLedgerSnapshot(): Promise<LedgerSnapshot> {
+  const server = getSorobanServer();
+  const latest = await server.getLatestLedger();
+  return {
+    ledger: latest.sequence,
+    timestampMs: Date.now(),
+  };
+}
+
+/**
+ * Validates a Stellar public/contract address:
+ * - G-addresses (accounts): 56 chars, base32, starts with 'G'
+ * - C-addresses (contracts): 56 chars, base32, starts with 'C'
+ */
+const BASE32_ALPHABET = /^[A-Z2-7]+$/;
+
+export function isValidStellarAddress(address: string, kind: "account" | "contract" | "any" = "any"): boolean {
+  if (typeof address !== "string" || address.length !== 56) return false;
+  if (!BASE32_ALPHABET.test(address)) return false;
+
+  if (kind === "account") return address.startsWith("G");
+  if (kind === "contract") return address.startsWith("C");
+  return address.startsWith("G") || address.startsWith("C");
+}
+
+export function isValidRecipientAddress(address: string): boolean {
+  return isValidStellarAddress(address, "account");
+}
+
+/** Well-known native XLM Stellar Asset Contract IDs, keyed by network. */
+export const NATIVE_XLM_CONTRACT_IDS: Record<string, string> = {
+  TESTNET: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+  PUBLIC: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+  FUTURENET: "CB64D3G7SM2RTH6JSGG34DDTFTQ5CFDKVDZJZSODMCX4NJ2C2E7UXY2L",
+};
+
+export function nativeTokenContractId(): string {
+  return NATIVE_XLM_CONTRACT_IDS[NETWORK] || NATIVE_XLM_CONTRACT_IDS.TESTNET;
+}
