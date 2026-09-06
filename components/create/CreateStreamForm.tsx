@@ -10,7 +10,7 @@ import { StreamPreview } from "@/components/create/StreamPreview";
 import { Spinner } from "@/components/ui/Spinner";
 import { fetchLatestLedgerSnapshot, isValidRecipientAddress, isValidStellarAddress, nativeTokenContractId, STELLAR_EXPERT_NETWORK } from "@/lib/stellar";
 import { dateToEstimatedLedger, AVERAGE_LEDGER_SECONDS } from "@/lib/streaming";
-import { approveTokenOnChain, createStreamOnChain, ContractNotConfiguredError } from "@/lib/contracts";
+import { approveTokenOnChain, createStreamOnChain, isStreamContractConfigured, ContractNotConfiguredError } from "@/lib/contracts";
 import { describeFreighterError } from "@/lib/freighter";
 import { parseAmountToBaseUnits, stellarExpertTxUrl } from "@/lib/format";
 import type { TokenInfo } from "@/types";
@@ -42,7 +42,13 @@ export function CreateStreamForm() {
     endDate.getTime() > startDate.getTime() &&
     (!cliffDate || (cliffDate.getTime() >= startDate.getTime() && cliffDate.getTime() <= endDate.getTime()));
 
-  const canSubmit = isRecipientValid && isAmountValid && isTokenValid && isScheduleValid && wallet.isConnected;
+  const canSubmit =
+    isRecipientValid &&
+    isAmountValid &&
+    isTokenValid &&
+    isScheduleValid &&
+    wallet.isConnected &&
+    isStreamContractConfigured();
 
   async function handleSubmit() {
     if (!wallet.publicKey) {
@@ -123,9 +129,18 @@ export function CreateStreamForm() {
 
   const isBusy = status === "approving" || status === "creating";
 
+  const contractsConfigured = isStreamContractConfigured();
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <div className="card space-y-6">
+        {!contractsConfigured && (
+          <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+            The Stream contract isn&apos;t configured for this environment yet (
+            <code className="font-mono text-xs">NEXT_PUBLIC_STREAM_CONTRACT_ID</code>). You can fill out the form
+            to preview a stream, but submitting will be disabled until a contract is deployed and configured.
+          </div>
+        )}
         <RecipientInput value={recipient} onChange={setRecipient} />
         <AmountInput amount={amount} onAmountChange={setAmount} token={token} onTokenChange={setToken} />
         <ScheduleInput
