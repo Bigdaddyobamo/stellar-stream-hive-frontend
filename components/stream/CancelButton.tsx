@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cancelStreamOnChain, fetchStreamOnChain, ContractNotConfiguredError } from "@/lib/contracts";
 import { fetchLatestLedgerSnapshot } from "@/lib/stellar";
 import { computeStreamedAmount } from "@/lib/streaming";
@@ -46,6 +46,21 @@ export function CancelButton({
   const [split, setSplit] = useState<Split | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && status !== "signing") {
+        setOpen(false);
+        setStatus("idle");
+        setSplit(null);
+        setError(null);
+        setTxHash(null);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, status]);
 
   const isSender = connectedAddress && connectedAddress === senderAddress;
   if (!isSender || !cancellable) return null;
@@ -110,9 +125,19 @@ export function CancelButton({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cancel-stream-heading"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && status !== "signing") close();
+      }}
+    >
       <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6">
-        <h3 className="mb-1 text-lg font-semibold">Cancel this stream?</h3>
+        <h3 id="cancel-stream-heading" className="mb-1 text-lg font-semibold">
+          Cancel this stream?
+        </h3>
         <p className="mb-4 text-sm text-muted">
           This ends the stream immediately and splits the funds based on what has streamed so far. This cannot be
           undone.
