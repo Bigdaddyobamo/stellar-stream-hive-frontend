@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/layout/NavBar";
@@ -17,6 +17,11 @@ export const metadata: Metadata = {
     description: "Stream payments by the second on Stellar.",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0e14",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
