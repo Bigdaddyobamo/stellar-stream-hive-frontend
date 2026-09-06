@@ -22,8 +22,9 @@ import {
   BASE_FEE,
   rpc as SorobanRpc,
 } from "@stellar/stellar-sdk";
-import { getSorobanServer, NETWORK_PASSPHRASE } from "./stellar";
+import { fetchLatestLedgerSnapshot, getSorobanServer, NETWORK_PASSPHRASE } from "./stellar";
 import { signWithFreighter } from "./freighter";
+import { ledgerToEstimatedDate } from "./streaming";
 import type { Stream, StreamStatus, TokenInfo } from "@/types";
 
 export class ContractNotConfiguredError extends Error {
@@ -152,14 +153,17 @@ export async function fetchStreamOnChain(streamId: string): Promise<Stream | nul
     .setTimeout(30)
     .build();
 
-  const sim = await server.simulateTransaction(tx);
+  const [sim, ledgerSnapshot] = await Promise.all([
+    server.simulateTransaction(tx),
+    fetchLatestLedgerSnapshot().catch(() => null),
+  ]);
   if (SorobanRpc.Api.isSimulationError(sim)) {
     throw new Error(sim.error);
   }
   if (!sim.result?.retval) return null;
 
   const raw = scValToNative(sim.result.retval) as RawStreamRecord;
-  return mapRawStream(streamId, raw);
+  return mapRawStream(streamId, raw, ledgerSnapshot?.ledger, ledgerSnapshot ?? undefined);
 }
 
 /** Raw shape returned by the stream contract's get_stream, prior to app-level mapping. */
@@ -176,10 +180,21 @@ interface RawStreamRecord {
   cancelled?: boolean;
 }
 
-function mapRawStream(id: string, raw: RawStreamRecord, currentLedger?: number): Stream {
+function mapRawStream(
+  id: string,
+  raw: RawStreamRecord,
+  currentLedger?: number,
+  ledgerReference?: { ledger: number; timestampMs: number }
+): Stream {
   const totalAmount = BigInt(raw.amount).toString();
   const withdrawnAmount = BigInt(raw.withdrawn).toString();
   const status = deriveStatus(raw, currentLedger);
+
+  // Ledger numbers are the on-chain source of truth; wall-clock times are only
+  // ever an estimate (derived from a single ledger/timestamp reference point)
+  // used for display, e.g. in StreamTimeline's start/end labels.
+  const toTime = (ledger: number) =>
+    ledgerReference ? ledgerToEstimatedDate(ledger, ledgerReference).getTime() : 0;
 
   return {
     id,
@@ -191,9 +206,9 @@ function mapRawStream(id: string, raw: RawStreamRecord, currentLedger?: number):
     startLedger: raw.start_ledger,
     endLedger: raw.end_ledger,
     cliffLedger: raw.cliff_ledger,
-    startTime: 0,
-    endTime: 0,
-    cliffTime: undefined,
+    startTime: toTime(raw.start_ledger),
+    endTime: toTime(raw.end_ledger),
+    cliffTime: raw.cliff_ledger !== undefined ? toTime(raw.cliff_ledger) : undefined,
     cancellable: raw.cancellable,
     status,
   };
