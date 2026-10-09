@@ -1,18 +1,24 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import { useStreams } from "@/hooks/useStreams";
 import { StreamCard } from "@/components/stream/StreamCard";
+import { StreamFilterBar } from "@/components/stream/StreamFilterBar";
 import { CancelButton } from "@/components/stream/CancelButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
+import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { formatTokenAmount } from "@/lib/format";
 
 export default function SendingPage() {
   const wallet = useWallet();
   const { streams, isLoading, error, apiConfigured, refetch } = useStreams(wallet.publicKey, "sender");
+  const [filter, setFilter] = useState<StreamFilter>("all");
+  const counts = useMemo(() => countByFilter(streams), [streams]);
+  const visibleStreams = useMemo(() => filterStreams(streams, filter), [streams, filter]);
 
   if (!wallet.isConnected) {
     return (
@@ -55,6 +61,16 @@ export default function SendingPage() {
         </div>
       )}
 
+      {!isLoading && !error && streams.length > 0 && (
+        <StreamFilterBar
+          value={filter}
+          onChange={setFilter}
+          counts={counts}
+          exportable={visibleStreams}
+          exportName="stellar-stream-hive-sending-streams"
+        />
+      )}
+
       {isLoading ? (
         <div className="flex justify-center py-16">
           <Spinner size="lg" />
@@ -66,9 +82,11 @@ export default function SendingPage() {
           title="No outgoing streams yet"
           description="Streams you create will show up here once the indexer picks them up."
         />
+      ) : visibleStreams.length === 0 ? (
+        <EmptyState title="No matching streams" description="Try a different status filter." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {streams.map((stream) => (
+          {visibleStreams.map((stream) => (
             <StreamCard
               key={stream.id}
               stream={stream}

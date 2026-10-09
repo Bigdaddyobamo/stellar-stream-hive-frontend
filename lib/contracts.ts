@@ -22,10 +22,10 @@ import {
   BASE_FEE,
   rpc as SorobanRpc,
 } from "@stellar/stellar-sdk";
-import { fetchLatestLedgerSnapshot, getSorobanServer, NETWORK_PASSPHRASE } from "./stellar";
+import { fetchLatestLedgerSnapshot, getSorobanServer, nativeTokenContractId, NETWORK_PASSPHRASE } from "./stellar";
 import { signWithFreighter } from "./freighter";
-import { ledgerToEstimatedDate } from "./streaming";
-import type { Stream, StreamStatus, TokenInfo } from "@/types";
+import { makeTokenResolver, mapRawStream, type RawStreamRecord } from "./streamMapping";
+import type { Stream } from "@/types";
 
 export class ContractNotConfiguredError extends Error {
   constructor(public readonly contractName: string) {
@@ -163,70 +163,13 @@ export async function fetchStreamOnChain(streamId: string): Promise<Stream | nul
   if (!sim.result?.retval) return null;
 
   const raw = scValToNative(sim.result.retval) as RawStreamRecord;
-  return mapRawStream(streamId, raw, ledgerSnapshot?.ledger, ledgerSnapshot ?? undefined);
-}
-
-/** Raw shape returned by the stream contract's get_stream, prior to app-level mapping. */
-interface RawStreamRecord {
-  sender: string;
-  recipient: string;
-  token: string;
-  amount: bigint | string;
-  withdrawn: bigint | string;
-  start_ledger: number;
-  end_ledger: number;
-  cliff_ledger?: number;
-  cancellable: boolean;
-  cancelled?: boolean;
-}
-
-function mapRawStream(
-  id: string,
-  raw: RawStreamRecord,
-  currentLedger?: number,
-  ledgerReference?: { ledger: number; timestampMs: number }
-): Stream {
-  const totalAmount = BigInt(raw.amount).toString();
-  const withdrawnAmount = BigInt(raw.withdrawn).toString();
-  const status = deriveStatus(raw, currentLedger);
-
-  // Ledger numbers are the on-chain source of truth; wall-clock times are only
-  // ever an estimate (derived from a single ledger/timestamp reference point)
-  // used for display, e.g. in StreamTimeline's start/end labels.
-  const toTime = (ledger: number) =>
-    ledgerReference ? ledgerToEstimatedDate(ledger, ledgerReference).getTime() : 0;
-
-  return {
-    id,
-    sender: raw.sender,
-    recipient: raw.recipient,
-    token: inferTokenInfo(raw.token),
-    totalAmount,
-    withdrawnAmount,
-    startLedger: raw.start_ledger,
-    endLedger: raw.end_ledger,
-    cliffLedger: raw.cliff_ledger,
-    startTime: toTime(raw.start_ledger),
-    endTime: toTime(raw.end_ledger),
-    cliffTime: raw.cliff_ledger !== undefined ? toTime(raw.cliff_ledger) : undefined,
-    cancellable: raw.cancellable,
-    status,
-  };
-}
-
-function deriveStatus(raw: RawStreamRecord, currentLedger?: number): StreamStatus {
-  if (raw.cancelled) return "cancelled";
-  if (currentLedger === undefined) return "active";
-  if (currentLedger < raw.start_ledger) return "scheduled";
-  if (raw.cliff_ledger && currentLedger < raw.cliff_ledger) return "cliff";
-  if (currentLedger >= raw.end_ledger) return "completed";
-  return "active";
-}
-
-function inferTokenInfo(contractId: string): TokenInfo {
-  // The registry/token metadata endpoint fills in richer info where available;
-  // this is a safe fallback so the UI never crashes on an unrecognized token.
-  return { contractId, symbol: "TOKEN", decimals: 7 };
+  return mapRawStream(
+    streamId,
+    raw,
+    ledgerSnapshot?.ledger,
+    ledgerSnapshot ?? undefined,
+    makeTokenResolver(nativeTokenContractId())
+  );
 }
 
 /**
@@ -289,23 +232,25 @@ export async function withdrawOnChain(params: {
   amount: bigint;
 }): Promise<{ hash: string }> {
   const contractId = getStreamContractId();
+  // Contract signature: withdraw(recipient, stream_id, amount)
   const args = [
-    nativeToScVal(BigInt(params.streamId), { type: "u64" }),
     new Address(params.recipient).toScVal(),
+    nativeToScVal(BigInt(params.streamId), { type: "u64" }),
     nativeToScVal(params.amount, { type: "i128" }),
   ];
   const { hash } = await invokeContract(contractId, "withdraw", args, params.recipient);
   return { hash };
 }
 
-/** Calls cancel on the Stream contract, settling the split between sender and recipient. */
+/** Calls cancel_stream on the Stream contract, settling the split between sender and recipient. */
 export async function cancelStreamOnChain(params: {
   streamId: string;
   sender: string;
 }): Promise<{ hash: string }> {
   const contractId = getStreamContractId();
-  const args = [nativeToScVal(BigInt(params.streamId), { type: "u64" }), new Address(params.sender).toScVal()];
-  const { hash } = await invokeContract(contractId, "cancel", args, params.sender);
+  // Contract signature: cancel_stream(sender, stream_id)
+  const args = [new Address(params.sender).toScVal(), nativeToScVal(BigInt(params.streamId), { type: "u64" })];
+  const { hash } = await invokeContract(contractId, "cancel_stream", args, params.sender);
   return { hash };
 }
 
@@ -327,7 +272,7 @@ export async function fetchWithdrawableOnChain(streamId: string): Promise<bigint
     fee: BASE_FEE,
     networkPassphrase: NETWORK_PASSPHRASE,
   })
-    .addOperation(contract.call("withdrawable", nativeToScVal(BigInt(streamId), { type: "u64" })))
+    .addOperation(contract.call("withdrawable_amount", nativeToScVal(BigInt(streamId), { type: "u64" })))
     .setTimeout(30)
     .build();
 

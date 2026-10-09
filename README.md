@@ -113,3 +113,45 @@ See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 ## License
 
 MIT
+
+## Testing
+
+```bash
+npm run lint        # ESLint (next/core-web-vitals)
+npm run typecheck   # tsc --noEmit, strict mode
+npm test            # Vitest unit tests (watch mode: npm run test:watch)
+npm run build       # production build
+```
+
+All four run in CI on every push and pull request (`.github/workflows/ci.yml`).
+
+The unit tests target the logic where a mistake would cost someone money or show
+them a wrong balance, and run without a browser, wallet or network:
+
+| Module | What is covered |
+| --- | --- |
+| `lib/streaming.ts` | The accrual formula against the contract's own test vectors: flooring, multiply-before-divide, cliff, monotonicity, BigInt precision beyond `Number.MAX_SAFE_INTEGER`, ledger/time estimation |
+| `lib/format.ts` | Decimal parsing and formatting round-trips, truncation instead of rounding, address and explorer URL helpers |
+| `lib/streamMapping.ts` | Mapping the indexer API's and the contract's responses into the app's `Stream` type |
+| `lib/streamList.ts` | Status filters and CSV export (including spreadsheet-formula neutralisation) |
+
+## Backend compatibility
+
+The frontend talks to two backends, and `lib/streamMapping.ts` is the one place
+that knows their wire formats:
+
+- **Indexer API** (`NEXT_PUBLIC_API_BASE_URL`): `GET /stats`, `GET /ready`,
+  `GET /streams/:id`, `GET /senders/:address`, `GET /recipients/:address`. List
+  endpoints are paginated (200 per page); the client follows `X-Total-Count`
+  until every page is loaded. Amounts arrive as decimal strings and are kept as
+  strings until they are converted to `BigInt` for display.
+- **Stream contract** (`NEXT_PUBLIC_STREAM_CONTRACT_ID`): `create_stream`,
+  `withdraw(recipient, stream_id, amount)`, `cancel_stream(sender, stream_id)`,
+  `withdrawable_amount` and `get_stream`. Argument order matters here — Soroban
+  passes arguments positionally — and is pinned in `lib/contracts.ts`.
+
+## Stream lists
+
+`/sending` and `/receiving` can be filtered by status (all / live / completed /
+cancelled) and exported to CSV. The export contains exactly the streams currently
+shown, with amounts as human-readable decimals.

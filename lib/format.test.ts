@@ -1,0 +1,108 @@
+import { describe, expect, it } from "vitest";
+import {
+  formatBaseUnits,
+  formatRate,
+  formatTokenAmount,
+  parseAmountToBaseUnits,
+  shortenAddress,
+  stellarExpertAccountUrl,
+  stellarExpertTxUrl,
+} from "./format";
+
+describe("parseAmountToBaseUnits", () => {
+  it("converts whole and fractional amounts at 7 decimals", () => {
+    expect(parseAmountToBaseUnits("1")).toBe(10_000_000n);
+    expect(parseAmountToBaseUnits("1.5")).toBe(15_000_000n);
+    expect(parseAmountToBaseUnits("0.0000001")).toBe(1n);
+    expect(parseAmountToBaseUnits(".5")).toBe(5_000_000n);
+  });
+
+  it("floors excess precision rather than rounding", () => {
+    expect(parseAmountToBaseUnits("0.00000019")).toBe(1n);
+    expect(parseAmountToBaseUnits("1.99999999")).toBe(19_999_999n);
+  });
+
+  it("respects other decimals", () => {
+    expect(parseAmountToBaseUnits("12.345678", 6)).toBe(12_345_678n);
+    expect(parseAmountToBaseUnits("1", 0)).toBe(1n);
+  });
+
+  it("keeps full precision above Number.MAX_SAFE_INTEGER", () => {
+    expect(parseAmountToBaseUnits("123456789012345678.1234567")).toBe(1234567890123456781234567n);
+  });
+
+  it("rejects empty, non-numeric and negative input", () => {
+    expect(() => parseAmountToBaseUnits("")).toThrow("Invalid amount");
+    expect(() => parseAmountToBaseUnits("abc")).toThrow("Invalid amount");
+    expect(() => parseAmountToBaseUnits("-1")).toThrow("negative");
+  });
+});
+
+describe("formatBaseUnits", () => {
+  it("groups thousands and keeps at least two decimals", () => {
+    expect(formatBaseUnits(12_345_678_900_000n)).toBe("1,234,567.89");
+    expect(formatBaseUnits(0n)).toBe("0.00");
+  });
+
+  it("trims trailing zeros beyond the minimum", () => {
+    expect(formatBaseUnits(15_000_000n)).toBe("1.50");
+    expect(formatBaseUnits(12_345_000n)).toBe("1.2345");
+  });
+
+  it("truncates instead of rounding up", () => {
+    expect(formatBaseUnits(19_999_999n, 7, { maxDecimals: 2 })).toBe("1.99");
+  });
+
+  it("handles negatives and ungrouped output", () => {
+    expect(formatBaseUnits(-15_000_000n)).toBe("-1.50");
+    expect(formatBaseUnits(12_345_678_900_000n, 7, { grouped: false })).toBe("1234567.89");
+  });
+
+  it("round-trips with parseAmountToBaseUnits", () => {
+    for (const v of ["0.0000001", "1", "42.4242424", "1000000.1234567"]) {
+      expect(formatBaseUnits(parseAmountToBaseUnits(v), 7, { grouped: false, minDecimals: 0 })).toBe(v);
+    }
+  });
+});
+
+describe("formatTokenAmount", () => {
+  it("appends the symbol", () => {
+    expect(formatTokenAmount(15_000_000n, "XLM")).toBe("1.50 XLM");
+    expect(formatTokenAmount(12_345_678n, "USDC", 7, 4)).toBe("1.2345 USDC");
+  });
+});
+
+describe("shortenAddress", () => {
+  const addr = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7";
+  it("keeps the ends", () => {
+    expect(shortenAddress(addr)).toBe("GAAZ…CWN7");
+    expect(shortenAddress(addr, 6, 6)).toBe("GAAZI4…OCCWN7");
+  });
+  it("leaves short or empty strings alone", () => {
+    expect(shortenAddress("GABC")).toBe("GABC");
+    expect(shortenAddress("")).toBe("");
+  });
+});
+
+describe("explorer urls", () => {
+  it("picks account vs contract from the address prefix", () => {
+    expect(stellarExpertAccountUrl("GABC")).toBe("https://stellar.expert/explorer/testnet/account/GABC");
+    expect(stellarExpertAccountUrl("CABC", "public")).toBe("https://stellar.expert/explorer/public/contract/CABC");
+  });
+  it("links transactions", () => {
+    expect(stellarExpertTxUrl("abc123")).toBe("https://stellar.expert/explorer/testnet/tx/abc123");
+  });
+});
+
+describe("formatRate", () => {
+  it("scales a per-second rate to hour and day", () => {
+    const r = formatRate(2, "XLM");
+    expect(r.perSecond).toBe("2.0000 XLM");
+    expect(r.perHour).toBe("7200.00 XLM");
+    expect(r.perDay).toBe("172800.00 XLM");
+  });
+  it("copes with zero and non-finite rates", () => {
+    expect(formatRate(0, "XLM").perDay).toBe("0 XLM");
+    expect(formatRate(Number.NaN, "XLM").perSecond).toBe("0 XLM");
+  });
+});

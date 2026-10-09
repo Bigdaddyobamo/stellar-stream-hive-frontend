@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import { useStreams } from "@/hooks/useStreams";
 import { StreamCard } from "@/components/stream/StreamCard";
+import { StreamFilterBar } from "@/components/stream/StreamFilterBar";
 import { TotalWithdrawable } from "@/components/stream/TotalWithdrawable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
+import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { fetchWithdrawableOnChain, withdrawOnChain, ContractNotConfiguredError } from "@/lib/contracts";
 import { describeFreighterError } from "@/lib/freighter";
@@ -15,6 +17,9 @@ import { describeFreighterError } from "@/lib/freighter";
 export default function ReceivingPage() {
   const wallet = useWallet();
   const { streams, isLoading, error, apiConfigured, refetch } = useStreams(wallet.publicKey, "recipient");
+  const [filter, setFilter] = useState<StreamFilter>("all");
+  const counts = useMemo(() => countByFilter(streams), [streams]);
+  const visibleStreams = useMemo(() => filterStreams(streams, filter), [streams, filter]);
   const [withdrawAllStatus, setWithdrawAllStatus] = useState<"idle" | "running" | "done">("idle");
   const [withdrawAllError, setWithdrawAllError] = useState<string | null>(null);
 
@@ -90,6 +95,16 @@ export default function ReceivingPage() {
         </div>
       )}
 
+      {!isLoading && !error && streams.length > 0 && (
+        <StreamFilterBar
+          value={filter}
+          onChange={setFilter}
+          counts={counts}
+          exportable={visibleStreams}
+          exportName="stellar-stream-hive-receiving-streams"
+        />
+      )}
+
       {isLoading ? (
         <div className="flex justify-center py-16">
           <Spinner size="lg" />
@@ -101,9 +116,11 @@ export default function ReceivingPage() {
           title="No incoming streams yet"
           description="Streams sent to your address will appear here once the indexer picks them up."
         />
+      ) : visibleStreams.length === 0 ? (
+        <EmptyState title="No matching streams" description="Try a different status filter." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {streams.map((stream) => (
+          {visibleStreams.map((stream) => (
             <StreamCard key={stream.id} stream={stream} role="recipient" />
           ))}
         </div>
