@@ -9,14 +9,14 @@ import { ScheduleInput } from "@/components/create/ScheduleInput";
 import { StreamPreview } from "@/components/create/StreamPreview";
 import { Spinner } from "@/components/ui/Spinner";
 import { fetchLatestLedgerSnapshot, isValidRecipientAddress, isValidStellarAddress, nativeTokenContractId, STELLAR_EXPERT_NETWORK } from "@/lib/stellar";
-import { dateToEstimatedLedger, AVERAGE_LEDGER_SECONDS } from "@/lib/streaming";
+import { dateToEstimatedLedger } from "@/lib/streaming";
 import { checkAmount, checkRecipientNotSender } from "@/lib/validation";
-import { approveTokenOnChain, createStreamOnChain, isStreamContractConfigured, ContractNotConfiguredError } from "@/lib/contracts";
+import { createStreamOnChain, isStreamContractConfigured, ContractNotConfiguredError } from "@/lib/contracts";
 import { describeFreighterError } from "@/lib/freighter";
 import { parseAmountToBaseUnits, stellarExpertTxUrl } from "@/lib/format";
 import type { TokenInfo } from "@/types";
 
-type Status = "idle" | "approving" | "creating" | "success" | "error";
+type Status = "idle" | "creating" | "success" | "error";
 
 const ONE_DAY_MS = 86_400_000;
 
@@ -62,7 +62,7 @@ export function CreateStreamForm() {
     if (!canSubmit) return;
 
     setError(null);
-    setStatus("approving");
+    setStatus("creating");
     try {
       const reference = await fetchLatestLedgerSnapshot();
       const startLedger = dateToEstimatedLedger(startDate, reference);
@@ -73,17 +73,8 @@ export function CreateStreamForm() {
       if (!finalAmount.ok) throw new Error(finalAmount.reason);
       const totalAmountBaseUnits = finalAmount.baseUnits;
 
-      // Give the approval a comfortable expiration window beyond the stream's end.
-      const expirationLedger = endLedger + Math.ceil(ONE_DAY_MS / (AVERAGE_LEDGER_SECONDS * 1000)) * 7;
-
-      await approveTokenOnChain({
-        tokenContractId: token.contractId,
-        owner: wallet.publicKey,
-        amount: totalAmountBaseUnits,
-        expirationLedger,
-      });
-
-      setStatus("creating");
+      // No token `approve` is needed: the vault pulls the deposit with the sender's
+      // signed `transfer`, authorised by this transaction (verified on testnet).
       const created = await createStreamOnChain({
         sender: wallet.publicKey,
         recipient,
@@ -134,7 +125,7 @@ export function CreateStreamForm() {
     );
   }
 
-  const isBusy = status === "approving" || status === "creating";
+  const isBusy = status === "creating";
 
   const contractsConfigured = isStreamContractConfigured();
 
@@ -192,7 +183,7 @@ export function CreateStreamForm() {
             {isBusy ? (
               <>
                 <Spinner size="sm" />
-                {status === "approving" ? "Approving token in wallet…" : "Creating stream…"}
+                Creating stream…
               </>
             ) : (
               "Create Stream"

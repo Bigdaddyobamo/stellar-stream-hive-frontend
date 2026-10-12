@@ -175,30 +175,6 @@ export async function fetchStreamOnChain(streamId: string): Promise<Stream | nul
   return withToken;
 }
 
-/**
- * Approves the Stream contract to transfer up to `amount` of `tokenContractId`
- * on behalf of `owner`, via the standard SAC `approve(from, spender, amount,
- * expiration_ledger)` call. Required before create_stream can pull funds
- * into the stream. `expirationLedger` should be comfortably beyond the
- * stream's end ledger.
- */
-export async function approveTokenOnChain(params: {
-  tokenContractId: string;
-  owner: string;
-  amount: bigint;
-  expirationLedger: number;
-}): Promise<{ hash: string }> {
-  const streamContractId = getStreamContractId();
-  const args = [
-    new Address(params.owner).toScVal(),
-    new Address(streamContractId).toScVal(),
-    nativeToScVal(params.amount, { type: "i128" }),
-    nativeToScVal(params.expirationLedger, { type: "u32" }),
-  ];
-  const { hash } = await invokeContract(params.tokenContractId, "approve", args, params.owner);
-  return { hash };
-}
-
 /** Calls create_stream on the Stream contract. Returns the new stream's id and tx hash. */
 export async function createStreamOnChain(params: {
   sender: string;

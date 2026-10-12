@@ -57,10 +57,11 @@ Open [http://localhost:3000](http://localhost:3000).
 See [`.env.example`](./.env.example) for the full, documented list. In short:
 
 - `NEXT_PUBLIC_STREAM_CONTRACT_ID`, `NEXT_PUBLIC_VAULT_CONTRACT_ID`, `NEXT_PUBLIC_REGISTRY_CONTRACT_ID` —
-  Soroban contract IDs. **These are intentionally left blank in this repo.** The contracts repo
-  deploys independently; once it has, fill these in from its `DEPLOYMENTS.md`. Until they're
-  set, contract-calling features show a clear "not yet configured" state instead of failing
-  silently or using a fabricated placeholder ID.
+  Soroban contract IDs. `.env.example` ships with the **testnet** deployment from 2026-10-12
+  (recorded in the contracts repo's `DEPLOYMENTS.md`), so `cp .env.example .env.local` gives a
+  working testnet setup. A redeploy creates new ids; update these from `scripts/deploy.sh`'s output.
+  On any other network leave them blank and contract-calling features show a clear "not yet
+  configured" state rather than failing silently.
 - `NEXT_PUBLIC_STELLAR_NETWORK`, `NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE`,
   `NEXT_PUBLIC_SOROBAN_RPC_URL`, `NEXT_PUBLIC_HORIZON_URL` — network configuration, defaulted to
   Stellar testnet.
@@ -89,7 +90,7 @@ hooks/
   useLiveBalance.ts           The per-second ticking balance hook
   useStream.ts / useStreams.ts  Data loading for one stream / lists of streams
 lib/
-  contracts.ts                Soroban contract call helpers (create/withdraw/cancel/approve)
+  contracts.ts                Soroban contract call helpers (create/withdraw/cancel)
   freighter.ts                Freighter API wrapper with normalized error handling
   stellar.ts                  Network config, RPC client, address validation
   streaming.ts                Client-side streamed-amount math (mirrors the contract)

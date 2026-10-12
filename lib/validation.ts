@@ -1,11 +1,10 @@
 /**
  * Pre-flight validation for the create-stream form.
  *
- * The create flow sends a token `approve` transaction first and only then
- * `create_stream`. Anything the contract will reject but the form accepted
- * therefore costs the user a fee for an approval they didn't need, so these
- * checks mirror the contract's own rules (positive i128 amount) and catch the
- * cases where the UI would otherwise silently change what is deposited.
+ * Anything the contract will reject but the form accepted costs the user a
+ * wallet prompt and a failed transaction, so these checks mirror the contract's
+ * own rules (positive i128 amount) and catch the cases where the UI would
+ * otherwise silently change what is deposited.
  */
 
 /** Largest value a Soroban `i128` amount can hold. */
