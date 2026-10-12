@@ -10,6 +10,7 @@ import { StreamPreview } from "@/components/create/StreamPreview";
 import { Spinner } from "@/components/ui/Spinner";
 import { fetchLatestLedgerSnapshot, isValidRecipientAddress, isValidStellarAddress, nativeTokenContractId, STELLAR_EXPERT_NETWORK } from "@/lib/stellar";
 import { dateToEstimatedLedger, AVERAGE_LEDGER_SECONDS } from "@/lib/streaming";
+import { checkAmount, checkRecipientNotSender } from "@/lib/validation";
 import { approveTokenOnChain, createStreamOnChain, isStreamContractConfigured, ContractNotConfiguredError } from "@/lib/contracts";
 import { describeFreighterError } from "@/lib/freighter";
 import { parseAmountToBaseUnits, stellarExpertTxUrl } from "@/lib/format";
@@ -36,8 +37,9 @@ export function CreateStreamForm() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ streamId: string; hash: string } | null>(null);
 
-  const isRecipientValid = isValidRecipientAddress(recipient);
-  const isAmountValid = /^\d+(\.\d+)?$/.test(amount) && Number(amount) > 0;
+  const isRecipientValid = isValidRecipientAddress(recipient) && checkRecipientNotSender(recipient, wallet.publicKey).ok;
+  const amountCheck = checkAmount(amount, token.decimals);
+  const isAmountValid = amountCheck.ok;
   const isTokenValid = token.symbol.length > 0 && isValidStellarAddress(token.contractId, "contract");
   const isScheduleValid =
     endDate.getTime() > startDate.getTime() &&
@@ -66,7 +68,10 @@ export function CreateStreamForm() {
       const startLedger = dateToEstimatedLedger(startDate, reference);
       const endLedger = dateToEstimatedLedger(endDate, reference);
       const cliffLedger = cliffDate ? dateToEstimatedLedger(cliffDate, reference) : undefined;
-      const totalAmountBaseUnits = parseAmountToBaseUnits(amount, token.decimals);
+      // Re-check at submit time: the token's decimals may have changed since the field was last edited.
+      const finalAmount = checkAmount(amount, token.decimals);
+      if (!finalAmount.ok) throw new Error(finalAmount.reason);
+      const totalAmountBaseUnits = finalAmount.baseUnits;
 
       // Give the approval a comfortable expiration window beyond the stream's end.
       const expirationLedger = endLedger + Math.ceil(ONE_DAY_MS / (AVERAGE_LEDGER_SECONDS * 1000)) * 7;
@@ -143,7 +148,7 @@ export function CreateStreamForm() {
             to preview a stream, but submitting will be disabled until a contract is deployed and configured.
           </div>
         )}
-        <RecipientInput value={recipient} onChange={setRecipient} />
+        <RecipientInput value={recipient} onChange={setRecipient} senderAddress={wallet.publicKey} />
         <AmountInput
           amount={amount}
           onAmountChange={setAmount}

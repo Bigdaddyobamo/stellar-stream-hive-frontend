@@ -1,0 +1,74 @@
+import { describe, expect, it } from "vitest";
+import { I128_MAX, checkAmount, checkRecipientNotSender } from "./validation";
+import { parseAmountToBaseUnits } from "./format";
+
+const base = (input: string, decimals = 7) => {
+  const r = checkAmount(input, decimals);
+  if (!r.ok) throw new Error(r.reason);
+  return r.baseUnits;
+};
+
+describe("checkAmount", () => {
+  it("converts valid input exactly", () => {
+    expect(base("1")).toBe(10_000_000n);
+    expect(base("1.5")).toBe(15_000_000n);
+    expect(base("0.0000001")).toBe(1n);
+    expect(base(".5")).toBe(5_000_000n);
+    expect(base("1.")).toBe(10_000_000n);
+    expect(base("  42  ")).toBe(420_000_000n);
+  });
+
+  it("respects the token's own decimals", () => {
+    expect(base("25", 6)).toBe(25_000_000n);
+    expect(base("1.234567", 6)).toBe(1_234_567n);
+    expect(base("7", 0)).toBe(7n);
+  });
+
+  it("rejects more fractional digits than the token supports instead of silently truncating", () => {
+    const r = checkAmount("1.123456789", 7);
+    expect(r).toEqual({ ok: false, reason: "This token supports at most 7 decimal places." });
+    expect(checkAmount("1.1234567", 6).ok).toBe(false);
+    expect(checkAmount("1.5", 0)).toEqual({ ok: false, reason: "This token has no decimal places; enter a whole number." });
+  });
+
+  it("rejects amounts that look positive but are zero in base units", () => {
+    // Number("0.00000001") > 0, yet this deposits nothing and the contract would reject it.
+    expect(Number("0.00000001") > 0).toBe(true);
+    expect(checkAmount("0", 7)).toEqual({ ok: false, reason: "Amount must be greater than zero." });
+    expect(checkAmount("0.0000000", 7).ok).toBe(false);
+    expect(checkAmount("0.00", 2).ok).toBe(false);
+  });
+
+  it("rejects malformed input", () => {
+    for (const bad of ["", "   ", "abc", "-1", "1e5", "1.2.3", ".", "1,5", "0x10", "+1", "１２"]) {
+      expect(checkAmount(bad, 7).ok, JSON.stringify(bad)).toBe(false);
+    }
+  });
+
+  it("keeps full precision for huge amounts and caps at i128", () => {
+    expect(base("123456789012345678.1234567")).toBe(1234567890123456781234567n);
+    expect(checkAmount("9".repeat(40), 7)).toEqual({ ok: false, reason: "Amount is too large." });
+    expect(checkAmount(I128_MAX.toString(), 0)).toEqual({ ok: true, baseUnits: I128_MAX });
+    expect(checkAmount((I128_MAX + 1n).toString(), 0).ok).toBe(false);
+  });
+
+  it("agrees with parseAmountToBaseUnits wherever the latter is exact", () => {
+    for (const v of ["1", "0.5", "1000000.1234567", "0.0000001"]) {
+      expect(base(v)).toBe(parseAmountToBaseUnits(v));
+    }
+  });
+});
+
+describe("checkRecipientNotSender", () => {
+  it("blocks streaming to your own address", () => {
+    expect(checkRecipientNotSender("GABC", "GABC")).toEqual({
+      ok: false,
+      reason: "The recipient can't be your own address.",
+    });
+  });
+  it("allows other recipients, an empty field, and a disconnected wallet", () => {
+    expect(checkRecipientNotSender("GOTHER", "GABC")).toEqual({ ok: true });
+    expect(checkRecipientNotSender("", "GABC")).toEqual({ ok: true });
+    expect(checkRecipientNotSender("GABC", null)).toEqual({ ok: true });
+  });
+});

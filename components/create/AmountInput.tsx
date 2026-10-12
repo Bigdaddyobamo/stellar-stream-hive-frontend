@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { nativeTokenContractId, isValidStellarAddress } from "@/lib/stellar";
 import { lookupTokenInfo } from "@/lib/tokens";
+import { checkAmount } from "@/lib/validation";
 import type { TokenInfo } from "@/types";
 
 export interface AmountInputProps {
@@ -53,7 +54,9 @@ export function AmountInput({ amount, onAmountChange, token, onTokenChange, onLo
   }, [isCustomToken, token.contractId]);
 
   const detected = detection === "detected";
-  const amountIsValid = amount === "" || (/^\d*\.?\d*$/.test(amount) && Number(amount) >= 0);
+  const amountCheck = amount.trim() === "" ? null : checkAmount(amount, token.decimals);
+  const amountError = amountCheck && !amountCheck.ok ? amountCheck.reason : null;
+  const amountIsValid = amountError === null;
 
   return (
     <div className="space-y-4">
@@ -86,7 +89,7 @@ export function AmountInput({ amount, onAmountChange, token, onTokenChange, onLo
             <option value="custom">Custom token</option>
           </select>
         </div>
-        {!amountIsValid && <p className="mt-1.5 text-xs text-danger">Enter a valid, non-negative number.</p>}
+        {amountError && <p className="mt-1.5 text-xs text-danger">{amountError}</p>}
       </div>
 
       {isCustomToken && (
