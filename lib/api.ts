@@ -19,6 +19,7 @@
  * a graceful loading/empty state instead of fabricating data.
  */
 import { nativeTokenContractId } from "./stellar";
+import { withTokenMetadata } from "./tokens";
 import {
   makeTokenResolver,
   mapApiStats,
@@ -109,7 +110,7 @@ async function fetchAllPages(path: string): Promise<ApiStreamView[]> {
 async function fetchStreamList(path: string): Promise<Stream[]> {
   const [views, reference] = await Promise.all([fetchAllPages(path), fetchLedgerReference()]);
   const resolveToken = makeTokenResolver(nativeTokenContractId());
-  return views.map((v) => mapApiStream(v, reference, resolveToken));
+  return withTokenMetadata(views.map((v) => mapApiStream(v, reference, resolveToken)));
 }
 
 /** Fetches streams where `address` is the sender. */
@@ -129,5 +130,6 @@ export async function fetchStreamById(id: string): Promise<Stream | null> {
     fetchLedgerReference(),
   ]);
   if (!view) return null;
-  return mapApiStream(view, reference, makeTokenResolver(nativeTokenContractId()));
+  const [stream] = await withTokenMetadata([mapApiStream(view, reference, makeTokenResolver(nativeTokenContractId()))]);
+  return stream;
 }

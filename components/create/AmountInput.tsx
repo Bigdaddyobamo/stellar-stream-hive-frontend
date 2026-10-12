@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { nativeTokenContractId, isValidStellarAddress } from "@/lib/stellar";
+import { lookupTokenInfo } from "@/lib/tokens";
 import type { TokenInfo } from "@/types";
 
 export interface AmountInputProps {
@@ -8,13 +10,49 @@ export interface AmountInputProps {
   onAmountChange: (value: string) => void;
   token: TokenInfo;
   onTokenChange: (token: TokenInfo) => void;
+  /** Reports whether a token lookup is in flight, so the form can hold off submitting until decimals are known. */
+  onLookupChange?: (isLooking: boolean) => void;
 }
+
+type Detection = "idle" | "checking" | "detected" | "manual";
 
 const XLM_TOKEN: TokenInfo = { contractId: nativeTokenContractId(), symbol: "XLM", decimals: 7 };
 
 /** Total amount field plus a token selector (native XLM or a custom Stellar Asset Contract). */
-export function AmountInput({ amount, onAmountChange, token, onTokenChange }: AmountInputProps) {
+export function AmountInput({ amount, onAmountChange, token, onTokenChange, onLookupChange }: AmountInputProps) {
   const isCustomToken = token.contractId !== XLM_TOKEN.contractId;
+  const [detection, setDetection] = useState<Detection>("idle");
+
+  // Keep the latest callbacks in refs so the lookup effect depends only on the contract id.
+  const onTokenChangeRef = useRef(onTokenChange);
+  onTokenChangeRef.current = onTokenChange;
+  const onLookupChangeRef = useRef(onLookupChange);
+  onLookupChangeRef.current = onLookupChange;
+
+  // Read symbol/decimals from the token contract. Typing decimals by hand is
+  // error-prone, and a wrong value silently mis-scales the deposit by 10^n.
+  useEffect(() => {
+    if (!isCustomToken || !isValidStellarAddress(token.contractId, "contract")) {
+      setDetection("idle");
+      onLookupChangeRef.current?.(false);
+      return;
+    }
+
+    let cancelled = false;
+    setDetection("checking");
+    onLookupChangeRef.current?.(true);
+    lookupTokenInfo(token.contractId).then(({ token: info, detected }) => {
+      if (cancelled) return;
+      if (detected) onTokenChangeRef.current(info);
+      setDetection(detected ? "detected" : "manual");
+      onLookupChangeRef.current?.(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isCustomToken, token.contractId]);
+
+  const detected = detection === "detected";
   const amountIsValid = amount === "" || (/^\d*\.?\d*$/.test(amount) && Number(amount) >= 0);
 
   return (
@@ -68,6 +106,18 @@ export function AmountInput({ amount, onAmountChange, token, onTokenChange }: Am
                 token.contractId && !isValidStellarAddress(token.contractId, "contract") ? "border-danger" : ""
               }`}
             />
+            {detection === "checking" && <p className="mt-1.5 text-xs text-muted">Reading token details from the contract…</p>}
+            {detected && (
+              <p className="mt-1.5 text-xs text-primary">
+                Detected {token.symbol} with {token.decimals} decimals from the token contract.
+              </p>
+            )}
+            {detection === "manual" && (
+              <p className="mt-1.5 text-xs text-warning">
+                Couldn&apos;t read this token&apos;s details. Enter the symbol and decimals yourself and double-check the
+                decimals — a wrong value changes how much is deposited.
+              </p>
+            )}
           </div>
           <div>
             <label className="label" htmlFor="token-symbol">
@@ -79,6 +129,7 @@ export function AmountInput({ amount, onAmountChange, token, onTokenChange }: Am
               value={token.symbol}
               onChange={(e) => onTokenChange({ ...token, symbol: e.target.value.toUpperCase().slice(0, 12) })}
               placeholder="USDC"
+              readOnly={detected}
               className="input-field"
             />
           </div>
@@ -92,6 +143,7 @@ export function AmountInput({ amount, onAmountChange, token, onTokenChange }: Am
               min={0}
               max={18}
               value={token.decimals}
+              readOnly={detected}
               onChange={(e) => onTokenChange({ ...token, decimals: Math.min(18, Math.max(0, Number(e.target.value))) })}
               className="input-field"
             />

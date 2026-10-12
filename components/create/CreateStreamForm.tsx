@@ -25,6 +25,7 @@ export function CreateStreamForm() {
 
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [isLookingUpToken, setIsLookingUpToken] = useState(false);
   const [token, setToken] = useState<TokenInfo>({ contractId: nativeTokenContractId(), symbol: "XLM", decimals: 7 });
   const [startDate, setStartDate] = useState(() => new Date(Date.now() + 5 * 60_000));
   const [cliffDate, setCliffDate] = useState<Date | null>(null);
@@ -47,6 +48,7 @@ export function CreateStreamForm() {
     isAmountValid &&
     isTokenValid &&
     isScheduleValid &&
+    !isLookingUpToken &&
     wallet.isConnected &&
     isStreamContractConfigured();
 
@@ -142,7 +144,13 @@ export function CreateStreamForm() {
           </div>
         )}
         <RecipientInput value={recipient} onChange={setRecipient} />
-        <AmountInput amount={amount} onAmountChange={setAmount} token={token} onTokenChange={setToken} />
+        <AmountInput
+          amount={amount}
+          onAmountChange={setAmount}
+          token={token}
+          onTokenChange={setToken}
+          onLookupChange={setIsLookingUpToken}
+        />
         <ScheduleInput
           startDate={startDate}
           onStartDateChange={setStartDate}

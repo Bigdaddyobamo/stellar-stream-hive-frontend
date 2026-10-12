@@ -25,6 +25,7 @@ import {
 import { fetchLatestLedgerSnapshot, getSorobanServer, nativeTokenContractId, NETWORK_PASSPHRASE } from "./stellar";
 import { signWithFreighter } from "./freighter";
 import { makeTokenResolver, mapRawStream, type RawStreamRecord } from "./streamMapping";
+import { withTokenMetadata } from "./tokens";
 import type { Stream } from "@/types";
 
 export class ContractNotConfiguredError extends Error {
@@ -163,13 +164,15 @@ export async function fetchStreamOnChain(streamId: string): Promise<Stream | nul
   if (!sim.result?.retval) return null;
 
   const raw = scValToNative(sim.result.retval) as RawStreamRecord;
-  return mapRawStream(
+  const stream = mapRawStream(
     streamId,
     raw,
     ledgerSnapshot?.ledger,
     ledgerSnapshot ?? undefined,
     makeTokenResolver(nativeTokenContractId())
   );
+  const [withToken] = await withTokenMetadata([stream]);
+  return withToken;
 }
 
 /**
