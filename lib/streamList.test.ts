@@ -83,4 +83,31 @@ describe("streamsToCsv", () => {
   it("is header-only for an empty list", () => {
     expect(streamsToCsv([]).trim().split("\r\n")).toHaveLength(1);
   });
+  it("writes a cancelled stream with its partial withdrawal and no cancel right", () => {
+    const [, row] = streamsToCsv([
+      stream("7", "cancelled", { withdrawnAmount: "2500000", cancellable: false }),
+    ])
+      .trim()
+      .split("\r\n");
+    const cells = row.split(",");
+    expect(cells[1]).toBe("cancelled");
+    expect(cells[5]).toBe("1.5");
+    expect(cells[6]).toBe("0.25");
+    expect(cells[10]).toBe("false");
+  });
+  it("writes whole-unit amounts without a decimal point for a 0-decimal token", () => {
+    const [, row] = streamsToCsv([
+      stream("8", "active", {
+        token: { contractId: "CTOKEN0", symbol: "NFT", decimals: 0 },
+        totalAmount: "1234567",
+        withdrawnAmount: "1000",
+      }),
+    ])
+      .trim()
+      .split("\r\n");
+    const cells = row.split(",");
+    expect(cells[4]).toBe("NFT");
+    expect(cells[5]).toBe("1234567");
+    expect(cells[6]).toBe("1000");
+  });
 });
