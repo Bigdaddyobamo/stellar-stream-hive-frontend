@@ -54,6 +54,22 @@ app will show a clear "not yet configured" state rather than erroring.
   or empty state that says so. Never invent numbers, contract IDs, or transaction hashes to make
   a screen look populated.
 
+## Accessibility checklist
+
+Check these for every new or changed component:
+
+- **Labels:** every control has an accessible name, from visible text, `aria-label` or
+  `aria-labelledby`. Icon-only buttons need a label.
+- **Focus order:** focus moves in the same order as the layout, and no visible control is
+  skipped.
+- **Keyboard use:** anything clickable can also be reached with Tab and activated with Enter or
+  Space. Don't rely on hover to reveal something.
+- **Colour contrast:** text and icons meet WCAG AA contrast in both light and dark themes.
+  Colour alone must not carry meaning.
+- **Reduced motion:** animations respect `prefers-reduced-motion`.
+- **Dynamic content:** loading, status and error messages that appear without a page change use
+  `role="status"`, `role="alert"` or `aria-live`.
+
 ## Before opening a PR
 
 ```bash
