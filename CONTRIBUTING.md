@@ -33,6 +33,25 @@ Contract-calling features (create/withdraw/cancel a stream) require
 only working on UI/UX that doesn't touch live contract state, you can leave these unset — the
 app will show a clear "not yet configured" state rather than erroring.
 
+## Running against a local API and testnet contracts
+
+The app shows real streams only when it can reach an indexer API. To try the full flow:
+
+1. **Run the indexer.** In a clone of
+   [stellar-stream-hive-api](https://github.com/Stellar-Hive/stellar-stream-hive-api), copy
+   `.env.example` to `.env`, set `STREAM_CONTRACT_ID` to the testnet contract ID from that file,
+   and run `cargo run`. It listens on `http://localhost:8080` by default. It picks up new
+   streams on its next poll, which is every 10 seconds by default.
+2. **Point the frontend at it.** In `.env.local`, set
+   `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080`, then restart `npm run dev`.
+3. **Fund two testnet accounts.** In Freighter, switch to **Testnet** and create or import a
+   sender and a recipient account. Fund each one with Friendbot at
+   `https://friendbot.stellar.org/?addr=<PUBLIC_KEY>`. Friendbot only works on testnet, so never
+   use a mainnet key here.
+4. **Create a test stream.** Connect the sender account, enter the recipient's address, keep
+   XLM as the token, choose a small amount, and submit. Freighter asks you to sign. Once the
+   transaction confirms, the stream shows up in the sender's list after the indexer's next poll.
+
 ## Development guidelines
 
 - **TypeScript strictness**: the project builds with `strict: true`. Please don't introduce
