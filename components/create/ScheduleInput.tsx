@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { addDays } from "date-fns";
 import { fetchLatestLedgerSnapshot, type LedgerSnapshot } from "@/lib/stellar";
 import { dateToEstimatedLedger } from "@/lib/streaming";
+
+/** Common payroll-style durations offered as one-click end dates. */
+const DURATION_PRESETS_DAYS = [7, 30, 90, 365] as const;
 
 export interface ScheduleInputProps {
   startDate: Date;
@@ -97,6 +101,27 @@ export function ScheduleInput({
             onChange={(e) => e.target.value && onEndDateChange(new Date(e.target.value))}
             className="input-field"
           />
+          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Duration presets">
+            {DURATION_PRESETS_DAYS.map((days) => {
+              const presetEnd = addDays(startDate, days);
+              const isActive = endDate.getTime() === presetEnd.getTime();
+              return (
+                <button
+                  key={days}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => onEndDateChange(presetEnd)}
+                  className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border text-muted hover:border-primary/50 hover:text-primary"
+                  }`}
+                >
+                  {days}d
+                </button>
+              );
+            })}
+          </div>
           <p className="mt-1 text-xs text-muted">{ledgerLabel(endDate)}</p>
         </div>
       </div>
