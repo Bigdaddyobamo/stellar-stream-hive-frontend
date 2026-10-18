@@ -156,15 +156,22 @@ export function CreateStreamForm() {
           onEndDateChange={setEndDate}
         />
 
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={cancellable}
-            onChange={(e) => setCancellable(e.target.checked)}
-            className="h-4 w-4 rounded border-border bg-background accent-primary"
-          />
-          Sender can cancel this stream before it ends
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={cancellable}
+              onChange={(e) => setCancellable(e.target.checked)}
+              className="h-4 w-4 rounded border-border bg-background accent-primary"
+            />
+            Sender can cancel this stream before it ends
+          </label>
+          {!cancellable && (
+            <p className="text-xs text-warning">
+              Funds cannot be recovered by cancelling; they stream to the recipient until the end.
+            </p>
+          )}
+        </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
 
