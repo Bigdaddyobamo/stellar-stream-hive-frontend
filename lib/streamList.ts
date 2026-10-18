@@ -3,6 +3,7 @@
  * per-status counts, and CSV export. Kept free of React so they're unit tested
  * directly (see `lib/streamList.test.ts`).
  */
+import { format } from "date-fns";
 import { formatBaseUnits } from "./format";
 import type { Stream, StreamStatus } from "@/types";
 
@@ -108,6 +109,11 @@ export function csvCell(value: string | number | boolean | undefined): string {
   let text = value === undefined ? "" : String(value);
   if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/** Export filename stamped with the local calendar date, so downloads on different days don't collide. */
+export function csvFilename(exportName: string, date: Date = new Date()): string {
+  return `${exportName}-${format(date, "yyyy-MM-dd")}.csv`;
 }
 
 /** Serializes streams to CSV. Amounts are human-readable decimals in the token's own units. */

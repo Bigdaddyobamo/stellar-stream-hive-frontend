@@ -1,6 +1,13 @@
 "use client";
 
-import { STREAM_FILTERS, STREAM_SORTS, streamsToCsv, type StreamFilter, type StreamSort } from "@/lib/streamList";
+import {
+  STREAM_FILTERS,
+  STREAM_SORTS,
+  csvFilename,
+  streamsToCsv,
+  type StreamFilter,
+  type StreamSort,
+} from "@/lib/streamList";
 import type { Stream } from "@/types";
 
 interface StreamFilterBarProps {
@@ -33,7 +40,7 @@ export function StreamFilterBar({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${exportName}.csv`;
+    link.download = csvFilename(exportName);
     document.body.appendChild(link);
     link.click();
     link.remove();

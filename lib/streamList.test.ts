@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   countByFilter,
   csvCell,
+  csvFilename,
   filterStreams,
   matchesFilter,
   searchStreams,
@@ -138,6 +139,17 @@ describe("csvCell", () => {
     expect(csvCell("+1")).toBe("'+1");
     expect(csvCell("-1")).toBe("'-1");
     expect(csvCell("@cmd")).toBe("'@cmd");
+  });
+});
+
+describe("csvFilename", () => {
+  it("appends the local date as YYYY-MM-DD", () => {
+    expect(csvFilename("stellar-stream-hive-sending-streams", new Date(2026, 9, 18, 23, 30))).toBe(
+      "stellar-stream-hive-sending-streams-2026-10-18.csv"
+    );
+  });
+  it("zero-pads single-digit months and days", () => {
+    expect(csvFilename("x", new Date(2026, 0, 5))).toBe("x-2026-01-05.csv");
   });
 });
 
