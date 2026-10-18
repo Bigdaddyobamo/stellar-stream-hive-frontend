@@ -10,7 +10,7 @@ import { TotalWithdrawable } from "@/components/stream/TotalWithdrawable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
-import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
+import { countByFilter, filterStreams, sortStreams, type StreamFilter, type StreamSort } from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { fetchWithdrawableOnChain, withdrawOnChain, ContractNotConfiguredError } from "@/lib/contracts";
 import { describeFreighterError } from "@/lib/freighter";
@@ -19,8 +19,9 @@ export default function ReceivingPage() {
   const wallet = useWallet();
   const { streams, isLoading, error, apiConfigured, refetch } = useStreams(wallet.publicKey, "recipient");
   const [filter, setFilter] = useState<StreamFilter>("all");
+  const [sort, setSort] = useState<StreamSort>("default");
   const counts = useMemo(() => countByFilter(streams), [streams]);
-  const visibleStreams = useMemo(() => filterStreams(streams, filter), [streams, filter]);
+  const visibleStreams = useMemo(() => sortStreams(filterStreams(streams, filter), sort), [streams, filter, sort]);
   const [withdrawAllStatus, setWithdrawAllStatus] = useState<"idle" | "running" | "done">("idle");
   const [withdrawAllError, setWithdrawAllError] = useState<string | null>(null);
 
@@ -103,6 +104,8 @@ export default function ReceivingPage() {
         <StreamFilterBar
           value={filter}
           onChange={setFilter}
+          sort={sort}
+          onSortChange={setSort}
           counts={counts}
           exportable={visibleStreams}
           exportName="stellar-stream-hive-receiving-streams"

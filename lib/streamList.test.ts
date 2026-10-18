@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countByFilter, csvCell, filterStreams, matchesFilter, streamsToCsv } from "./streamList";
+import { countByFilter, csvCell, filterStreams, matchesFilter, sortStreams, streamsToCsv } from "./streamList";
 import type { Stream, StreamStatus } from "@/types";
 
 function stream(id: string, status: StreamStatus, overrides: Partial<Stream> = {}): Stream {
@@ -43,6 +43,44 @@ describe("filtering", () => {
   it("counts are consistent with the filters", () => {
     expect(countByFilter(all)).toEqual({ all: 5, live: 3, completed: 1, cancelled: 1 });
     expect(countByFilter([])).toEqual({ all: 0, live: 0, completed: 0, cancelled: 0 });
+  });
+});
+
+describe("sortStreams", () => {
+  const ids = (list: Stream[]) => list.map((s) => s.id);
+
+  it("orders newest first by start ledger", () => {
+    const list = [
+      stream("a", "active", { startLedger: 100 }),
+      stream("b", "active", { startLedger: 300 }),
+      stream("c", "active", { startLedger: 200 }),
+    ];
+    expect(ids(sortStreams(list, "newest"))).toEqual(["b", "c", "a"]);
+  });
+  it("orders ending soonest first by end ledger", () => {
+    const list = [
+      stream("a", "active", { endLedger: 900 }),
+      stream("b", "active", { endLedger: 300 }),
+      stream("c", "active", { endLedger: 600 }),
+    ];
+    expect(ids(sortStreams(list, "ending"))).toEqual(["b", "c", "a"]);
+  });
+  it("orders largest first by total amount without losing precision above 2^53", () => {
+    const list = [
+      stream("a", "active", { totalAmount: "9007199254740992" }),
+      stream("b", "active", { totalAmount: "9007199254740993" }),
+      stream("c", "active", { totalAmount: "100" }),
+    ];
+    expect(ids(sortStreams(list, "largest"))).toEqual(["b", "a", "c"]);
+  });
+  it("keeps the API order for 'default'", () => {
+    expect(ids(sortStreams(all, "default"))).toEqual(["1", "2", "3", "4", "5"]);
+  });
+  it("returns a new array and leaves the input untouched", () => {
+    const list = [stream("a", "active", { startLedger: 1 }), stream("b", "active", { startLedger: 2 })];
+    const sorted = sortStreams(list, "newest");
+    expect(sorted).not.toBe(list);
+    expect(ids(list)).toEqual(["a", "b"]);
   });
 });
 

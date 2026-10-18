@@ -35,6 +35,37 @@ export function filterStreams(streams: Stream[], filter: StreamFilter): Stream[]
   return filter === "all" ? streams : streams.filter((s) => matchesFilter(s, filter));
 }
 
+export type StreamSort = "default" | "newest" | "ending" | "largest";
+
+export const STREAM_SORTS: { value: StreamSort; label: string }[] = [
+  { value: "default", label: "Default order" },
+  { value: "newest", label: "Newest first" },
+  { value: "ending", label: "Ending soonest" },
+  { value: "largest", label: "Largest amount" },
+];
+
+/**
+ * Returns a sorted copy; the input is never mutated. "newest" orders by start ledger, "ending" by
+ * end ledger, and "largest" by total amount compared as BigInt so values beyond 2^53 stay exact.
+ * "default" keeps the order the API returned.
+ */
+export function sortStreams(streams: Stream[], key: StreamSort): Stream[] {
+  const sorted = [...streams];
+  switch (key) {
+    case "default":
+      return sorted;
+    case "newest":
+      return sorted.sort((a, b) => b.startLedger - a.startLedger);
+    case "ending":
+      return sorted.sort((a, b) => a.endLedger - b.endLedger);
+    case "largest":
+      return sorted.sort((a, b) => {
+        const diff = BigInt(b.totalAmount) - BigInt(a.totalAmount);
+        return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+      });
+  }
+}
+
 export function countByFilter(streams: Stream[]): Record<StreamFilter, number> {
   return {
     all: streams.length,

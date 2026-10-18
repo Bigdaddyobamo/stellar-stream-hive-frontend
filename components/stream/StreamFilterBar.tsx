@@ -1,19 +1,29 @@
 "use client";
 
-import { STREAM_FILTERS, streamsToCsv, type StreamFilter } from "@/lib/streamList";
+import { STREAM_FILTERS, STREAM_SORTS, streamsToCsv, type StreamFilter, type StreamSort } from "@/lib/streamList";
 import type { Stream } from "@/types";
 
 interface StreamFilterBarProps {
   value: StreamFilter;
   onChange: (filter: StreamFilter) => void;
+  sort: StreamSort;
+  onSortChange: (sort: StreamSort) => void;
   counts: Record<StreamFilter, number>;
   /** Streams to include in the CSV export (typically the currently visible list). */
   exportable: Stream[];
   exportName: string;
 }
 
-/** Filter tabs plus a "Download CSV" action for the /sending and /receiving lists. */
-export function StreamFilterBar({ value, onChange, counts, exportable, exportName }: StreamFilterBarProps) {
+/** Filter tabs, a sort select, and a "Download CSV" action for the /sending and /receiving lists. */
+export function StreamFilterBar({
+  value,
+  onChange,
+  sort,
+  onSortChange,
+  counts,
+  exportable,
+  exportName,
+}: StreamFilterBarProps) {
   function downloadCsv() {
     const blob = new Blob([streamsToCsv(exportable)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -49,14 +59,28 @@ export function StreamFilterBar({ value, onChange, counts, exportable, exportNam
           );
         })}
       </div>
-      <button
-        type="button"
-        onClick={downloadCsv}
-        disabled={exportable.length === 0}
-        className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Download CSV
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          aria-label="Sort streams"
+          value={sort}
+          onChange={(e) => onSortChange(e.target.value as StreamSort)}
+          className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-sm text-muted transition-colors hover:text-white"
+        >
+          {STREAM_SORTS.map((option) => (
+            <option key={option.value} value={option.value} className="bg-background">
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={downloadCsv}
+          disabled={exportable.length === 0}
+          className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Download CSV
+        </button>
+      </div>
     </div>
   );
 }

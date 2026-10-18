@@ -10,7 +10,7 @@ import { CancelButton } from "@/components/stream/CancelButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
-import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
+import { countByFilter, filterStreams, sortStreams, type StreamFilter, type StreamSort } from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { formatTokenAmount } from "@/lib/format";
 
@@ -18,8 +18,9 @@ export default function SendingPage() {
   const wallet = useWallet();
   const { streams, isLoading, error, apiConfigured, refetch } = useStreams(wallet.publicKey, "sender");
   const [filter, setFilter] = useState<StreamFilter>("all");
+  const [sort, setSort] = useState<StreamSort>("default");
   const counts = useMemo(() => countByFilter(streams), [streams]);
-  const visibleStreams = useMemo(() => filterStreams(streams, filter), [streams, filter]);
+  const visibleStreams = useMemo(() => sortStreams(filterStreams(streams, filter), sort), [streams, filter, sort]);
 
   if (!wallet.isConnected) {
     return (
@@ -69,6 +70,8 @@ export default function SendingPage() {
         <StreamFilterBar
           value={filter}
           onChange={setFilter}
+          sort={sort}
+          onSortChange={setSort}
           counts={counts}
           exportable={visibleStreams}
           exportName="stellar-stream-hive-sending-streams"
