@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { format, formatDistanceToNow } from "date-fns";
 import type { Stream } from "@/types";
 import { formatTokenAmount, shortenAddress } from "@/lib/format";
 import { StreamStatusBadge } from "@/components/stream/StreamStatusBadge";
@@ -17,6 +18,14 @@ export function StreamCard({ stream, role, actions }: StreamCardProps) {
   const counterpartAddress = role === "sender" ? stream.recipient : stream.sender;
   const isLive = stream.status === "active" || stream.status === "cliff";
 
+  const endDate = stream.endTime ? new Date(stream.endTime) : null;
+  const hasValidEndDate = endDate !== null && !Number.isNaN(endDate.getTime());
+  const endLabel = hasValidEndDate
+    ? endDate.getTime() > Date.now()
+      ? `Ends in ${formatDistanceToNow(endDate)}`
+      : `Ended ${formatDistanceToNow(endDate)} ago`
+    : null;
+
   return (
     <div className="card flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
@@ -26,6 +35,12 @@ export function StreamCard({ stream, role, actions }: StreamCardProps) {
         </div>
         <StreamStatusBadge status={stream.status} />
       </div>
+
+      {hasValidEndDate && endLabel ? (
+        <p className="text-xs text-muted" title={format(endDate, "PPpp")}>
+          {endLabel}
+        </p>
+      ) : null}
 
       {role === "recipient" ? (
         <LiveBalance
