@@ -33,6 +33,18 @@ every 30 seconds to correct for drift. Actual withdrawals always re-fetch the re
 amount before submitting — the ticking estimate is a UI affordance, never the source of truth
 for a transaction.
 
+## npm scripts
+
+| Script | Description |
+| --- | --- |
+| `dev` | Start the Next.js development server |
+| `build` | Production build |
+| `start` | Serve the production build |
+| `lint` | Run ESLint |
+| `typecheck` | Run the TypeScript compiler with `--noEmit` |
+| `test` | Run Vitest once |
+| `test:watch` | Run Vitest in watch mode |
+
 ## Tech stack
 
 - [Next.js 14](https://nextjs.org/) (App Router) + TypeScript
