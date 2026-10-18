@@ -5,6 +5,7 @@ import { useWallet } from "@/hooks/useWallet";
 import { useStreams } from "@/hooks/useStreams";
 import { StreamCard } from "@/components/stream/StreamCard";
 import { StreamFilterBar } from "@/components/stream/StreamFilterBar";
+import { RefreshButton } from "@/components/stream/RefreshButton";
 import { CancelButton } from "@/components/stream/CancelButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -44,14 +45,17 @@ export default function SendingPage() {
           <h1 className="text-3xl font-bold">Streams you&apos;re sending</h1>
           <p className="mt-1 text-muted">Streams where your connected wallet is the sender.</p>
         </div>
-        {activeStreams.length > 0 && (
-          <div className="card px-5 py-3 text-right">
-            <p className="text-xs text-muted">Total outgoing commitment</p>
-            <p className="mono-tabular text-xl font-bold text-primary">
-              {formatTokenAmount(totalOutgoing, commonSymbol, commonDecimals, 4)}
-            </p>
-          </div>
-        )}
+        <div className="flex flex-wrap items-end gap-3">
+          <RefreshButton onRefresh={refetch} isLoading={isLoading} />
+          {activeStreams.length > 0 && (
+            <div className="card px-5 py-3 text-right">
+              <p className="text-xs text-muted">Total outgoing commitment</p>
+              <p className="mono-tabular text-xl font-bold text-primary">
+                {formatTokenAmount(totalOutgoing, commonSymbol, commonDecimals, 4)}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {!apiConfigured && (

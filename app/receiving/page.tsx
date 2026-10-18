@@ -5,6 +5,7 @@ import { useWallet } from "@/hooks/useWallet";
 import { useStreams } from "@/hooks/useStreams";
 import { StreamCard } from "@/components/stream/StreamCard";
 import { StreamFilterBar } from "@/components/stream/StreamFilterBar";
+import { RefreshButton } from "@/components/stream/RefreshButton";
 import { TotalWithdrawable } from "@/components/stream/TotalWithdrawable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -62,25 +63,28 @@ export default function ReceivingPage() {
           <h1 className="text-3xl font-bold">Streams you&apos;re receiving</h1>
           <p className="mt-1 text-muted">Streams where your connected wallet is the recipient.</p>
         </div>
-        {withdrawableStreams.length > 0 && (
-          <div className="flex items-center gap-3">
-            <TotalWithdrawable streams={withdrawableStreams} />
-            <button
-              type="button"
-              onClick={handleWithdrawAll}
-              disabled={withdrawAllStatus === "running"}
-              className="btn-primary"
-            >
-              {withdrawAllStatus === "running" ? (
-                <>
-                  <Spinner size="sm" /> Withdrawing…
-                </>
-              ) : (
-                `Withdraw All (${withdrawableStreams.length})`
-              )}
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <RefreshButton onRefresh={refetch} isLoading={isLoading} />
+          {withdrawableStreams.length > 0 && (
+            <>
+              <TotalWithdrawable streams={withdrawableStreams} />
+              <button
+                type="button"
+                onClick={handleWithdrawAll}
+                disabled={withdrawAllStatus === "running"}
+                className="btn-primary"
+              >
+                {withdrawAllStatus === "running" ? (
+                  <>
+                    <Spinner size="sm" /> Withdrawing…
+                  </>
+                ) : (
+                  `Withdraw All (${withdrawableStreams.length})`
+                )}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {withdrawAllError && <p className="mb-4 text-sm text-danger">{withdrawAllError}</p>}
