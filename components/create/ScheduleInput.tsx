@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { addDays } from "date-fns";
 import { fetchLatestLedgerSnapshot, type LedgerSnapshot } from "@/lib/stellar";
 import { dateToEstimatedLedger } from "@/lib/streaming";
+import { formatUtcOffset } from "@/lib/format";
 
 /** Common payroll-style durations offered as one-click end dates. */
 const DURATION_PRESETS_DAYS = [7, 30, 90, 365] as const;
@@ -39,6 +40,12 @@ export function ScheduleInput({
 }: ScheduleInputProps) {
   const [reference, setReference] = useState<LedgerSnapshot | null>(null);
   const [hasCliff, setHasCliff] = useState(cliffDate !== null);
+  // The server's timezone can differ from the browser's, so the offset is only shown after mount.
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +74,8 @@ export function ScheduleInput({
     !orderError && startDate.getTime() < Date.now() - 60_000
       ? "Start date is in the past — the recipient will immediately see some balance already streamed."
       : null;
+
+  const utcOffset = isMounted ? formatUtcOffset(startDate) : null;
 
   function ledgerLabel(date: Date): string {
     if (!reference) return "";
@@ -125,6 +134,9 @@ export function ScheduleInput({
           <p className="mt-1 text-xs text-muted">{ledgerLabel(endDate)}</p>
         </div>
       </div>
+      {utcOffset && (
+        <p className="text-xs text-muted">Times are in your local timezone ({utcOffset}).</p>
+      )}
 
       <div>
         <label className="flex items-center gap-2 text-sm text-muted">
