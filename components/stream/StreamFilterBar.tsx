@@ -6,6 +6,8 @@ import type { Stream } from "@/types";
 interface StreamFilterBarProps {
   value: StreamFilter;
   onChange: (filter: StreamFilter) => void;
+  query: string;
+  onQueryChange: (query: string) => void;
   sort: StreamSort;
   onSortChange: (sort: StreamSort) => void;
   counts: Record<StreamFilter, number>;
@@ -14,10 +16,12 @@ interface StreamFilterBarProps {
   exportName: string;
 }
 
-/** Filter tabs, a sort select, and a "Download CSV" action for the /sending and /receiving lists. */
+/** Filter tabs, search, a sort select, and a "Download CSV" action for the /sending and /receiving lists. */
 export function StreamFilterBar({
   value,
   onChange,
+  query,
+  onQueryChange,
   sort,
   onSortChange,
   counts,
@@ -60,6 +64,14 @@ export function StreamFilterBar({
         })}
       </div>
       <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          aria-label="Search by stream ID or address"
+          placeholder="Search ID or address"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          className="w-56 rounded-lg border border-border bg-transparent px-3 py-1.5 text-sm text-white placeholder:text-muted"
+        />
         <select
           aria-label="Sort streams"
           value={sort}

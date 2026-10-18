@@ -35,6 +35,16 @@ export function filterStreams(streams: Stream[], filter: StreamFilter): Stream[]
   return filter === "all" ? streams : streams.filter((s) => matchesFilter(s, filter));
 }
 
+/**
+ * Case-insensitive substring match against a stream's id, sender and recipient address. A blank
+ * query returns the input unchanged.
+ */
+export function searchStreams(streams: Stream[], query: string): Stream[] {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") return streams;
+  return streams.filter((s) => [s.id, s.sender, s.recipient].some((field) => field.toLowerCase().includes(needle)));
+}
+
 export type StreamSort = "default" | "newest" | "ending" | "largest";
 
 export const STREAM_SORTS: { value: StreamSort; label: string }[] = [

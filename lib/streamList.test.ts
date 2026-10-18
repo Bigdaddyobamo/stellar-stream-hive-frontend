@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { countByFilter, csvCell, filterStreams, matchesFilter, sortStreams, streamsToCsv } from "./streamList";
+import {
+  countByFilter,
+  csvCell,
+  filterStreams,
+  matchesFilter,
+  searchStreams,
+  sortStreams,
+  streamsToCsv,
+} from "./streamList";
 import type { Stream, StreamStatus } from "@/types";
 
 function stream(id: string, status: StreamStatus, overrides: Partial<Stream> = {}): Stream {
@@ -43,6 +51,35 @@ describe("filtering", () => {
   it("counts are consistent with the filters", () => {
     expect(countByFilter(all)).toEqual({ all: 5, live: 3, completed: 1, cancelled: 1 });
     expect(countByFilter([])).toEqual({ all: 0, live: 0, completed: 0, cancelled: 0 });
+  });
+});
+
+describe("searchStreams", () => {
+  const SENDER = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7";
+  const RECIPIENT = "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H";
+  const list = [
+    stream("alpha-1", "active"),
+    stream("beta-2", "active", { sender: "GDQP2KPQGKIHYJGXNUIYOMHARUARCANHJQ4ZWZ5GFPUCUDR6WZ5ZDZ7Q", recipient: "GCBBBBB" }),
+  ];
+  const ids = (found: Stream[]) => found.map((s) => s.id);
+
+  it("matches a recipient address regardless of case", () => {
+    expect(ids(searchStreams(list, RECIPIENT.slice(0, 10).toLowerCase()))).toEqual(["alpha-1"]);
+  });
+  it("matches a sender address", () => {
+    expect(ids(searchStreams(list, "gdqp2kpq"))).toEqual(["beta-2"]);
+  });
+  it("matches the stream id", () => {
+    expect(ids(searchStreams(list, "ALPHA"))).toEqual(["alpha-1"]);
+  });
+  it("ignores surrounding whitespace in the query", () => {
+    expect(ids(searchStreams(list, `  ${SENDER.slice(0, 8)}  `))).toEqual(["alpha-1"]);
+  });
+  it("returns no streams when nothing matches", () => {
+    expect(searchStreams(list, "zzz-nope")).toEqual([]);
+  });
+  it("returns the input unchanged for a blank query", () => {
+    expect(searchStreams(list, "   ")).toBe(list);
   });
 });
 
