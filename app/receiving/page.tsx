@@ -9,6 +9,7 @@ import { TotalWithdrawable } from "@/components/stream/TotalWithdrawable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
+import { CardSkeletonGrid } from "@/components/ui/CardSkeleton";
 import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { fetchWithdrawableOnChain, withdrawOnChain, ContractNotConfiguredError } from "@/lib/contracts";
@@ -106,9 +107,7 @@ export default function ReceivingPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
-        </div>
+        <CardSkeletonGrid />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : streams.length === 0 ? (

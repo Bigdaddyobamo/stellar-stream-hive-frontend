@@ -8,7 +8,7 @@ import { StreamFilterBar } from "@/components/stream/StreamFilterBar";
 import { CancelButton } from "@/components/stream/CancelButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { Spinner } from "@/components/ui/Spinner";
+import { CardSkeletonGrid } from "@/components/ui/CardSkeleton";
 import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { formatTokenAmount } from "@/lib/format";
@@ -72,9 +72,7 @@ export default function SendingPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
-        </div>
+        <CardSkeletonGrid />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : streams.length === 0 ? (
