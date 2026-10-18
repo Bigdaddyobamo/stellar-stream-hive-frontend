@@ -14,7 +14,9 @@ export function StreamStatusBadge({ status }: { status: StreamStatus }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${style.className}`}
     >
-      {status === "active" && <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-primary" />}
+      {status === "active" && (
+        <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-primary motion-reduce:animate-none" />
+      )}
       {style.label}
     </span>
   );

@@ -28,15 +28,14 @@ export function StreamFilterBar({ value, onChange, counts, exportable, exportNam
 
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <div role="tablist" aria-label="Filter streams by status" className="flex flex-wrap gap-2">
+      <div role="group" aria-label="Filter streams by status" className="flex flex-wrap gap-2">
         {STREAM_FILTERS.map((filter) => {
           const selected = filter.value === value;
           return (
             <button
               key={filter.value}
               type="button"
-              role="tab"
-              aria-selected={selected}
+              aria-pressed={selected}
               onClick={() => onChange(filter.value)}
               className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
                 selected
