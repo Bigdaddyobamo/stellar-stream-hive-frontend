@@ -9,7 +9,9 @@ import { TotalWithdrawable } from "@/components/stream/TotalWithdrawable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
+import { shortenAddress } from "@/lib/format";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { fetchWithdrawableOnChain, withdrawOnChain, ContractNotConfiguredError } from "@/lib/contracts";
 import { describeFreighterError } from "@/lib/freighter";
@@ -115,6 +117,14 @@ export default function ReceivingPage() {
         <EmptyState
           title="No incoming streams yet"
           description="Streams sent to your address will appear here once the indexer picks them up."
+          action={
+            wallet.isConnected && wallet.publicKey ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="font-mono text-sm text-muted">{shortenAddress(wallet.publicKey)}</span>
+                <CopyButton value={wallet.publicKey} label="Copy address" />
+              </div>
+            ) : undefined
+          }
         />
       ) : visibleStreams.length === 0 ? (
         <EmptyState title="No matching streams" description="Try a different status filter." />

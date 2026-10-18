@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Stream } from "@/types";
 import { formatTokenAmount, shortenAddress } from "@/lib/format";
+import { computeProgress } from "@/lib/streaming";
 import { StreamStatusBadge } from "@/components/stream/StreamStatusBadge";
 import { LiveBalance } from "@/components/stream/LiveBalance";
 
@@ -16,6 +17,7 @@ export function StreamCard({ stream, role, actions }: StreamCardProps) {
   const counterpartLabel = role === "sender" ? "Recipient" : "Sender";
   const counterpartAddress = role === "sender" ? stream.recipient : stream.sender;
   const isLive = stream.status === "active" || stream.status === "cliff";
+  const progress = computeProgress(stream.startLedger, stream.endLedger);
 
   return (
     <div className="card flex flex-col gap-4">
@@ -46,6 +48,27 @@ export function StreamCard({ stream, role, actions }: StreamCardProps) {
           <p className="mono-tabular text-xl font-semibold">
             {formatTokenAmount(BigInt(stream.totalAmount), stream.token.symbol, stream.token.decimals, 4)}
           </p>
+        </div>
+      )}
+
+      {progress === null ? (
+        <div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2" aria-hidden="true" />
+          <p className="mt-1 text-xs text-muted">Progress unavailable</p>
+        </div>
+      ) : (
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progress}
+          aria-label="Stream progress"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+        >
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-500 motion-reduce:transition-none"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       )}
 

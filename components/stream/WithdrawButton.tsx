@@ -128,6 +128,7 @@ export function WithdrawButton({
         <button
           type="button"
           onClick={() => setUseCustom(false)}
+          aria-pressed={!useCustom}
           className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
             !useCustom ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"
           }`}
@@ -137,6 +138,7 @@ export function WithdrawButton({
         <button
           type="button"
           onClick={() => setUseCustom(true)}
+          aria-pressed={useCustom}
           className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
             useCustom ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"
           }`}
@@ -146,14 +148,20 @@ export function WithdrawButton({
       </div>
 
       {useCustom && (
-        <input
-          type="text"
-          inputMode="decimal"
-          placeholder={`Amount in ${tokenSymbol}`}
-          value={customAmount}
-          onChange={(e) => setCustomAmount(e.target.value)}
-          className="input-field mb-3"
-        />
+        <>
+          <label htmlFor="withdraw-custom-amount" className="sr-only">
+            Custom withdrawal amount in {tokenSymbol}
+          </label>
+          <input
+            id="withdraw-custom-amount"
+            type="text"
+            inputMode="decimal"
+            placeholder={`Amount in ${tokenSymbol}`}
+            value={customAmount}
+            onChange={(e) => setCustomAmount(e.target.value)}
+            className="input-field mb-3"
+          />
+        </>
       )}
 
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}

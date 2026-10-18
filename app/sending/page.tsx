@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import { useStreams } from "@/hooks/useStreams";
@@ -81,6 +82,11 @@ export default function SendingPage() {
         <EmptyState
           title="No outgoing streams yet"
           description="Streams you create will show up here once the indexer picks them up."
+          action={
+            <Link href="/streams/new" className="btn-primary">
+              Create a stream
+            </Link>
+          }
         />
       ) : visibleStreams.length === 0 ? (
         <EmptyState title="No matching streams" description="Try a different status filter." />
