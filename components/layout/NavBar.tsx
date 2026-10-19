@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
-import { NetworkSelector } from "@/components/wallet/NetworkSelector";
+import { NetworkBadge } from "@/components/wallet/NetworkBadge";
 
 const LINKS = [
   { href: "/streams/new", label: "Create Stream" },
@@ -39,7 +39,7 @@ export function NavBar() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <NetworkSelector />
+          <NetworkBadge />
           <ConnectButton />
           <button
             type="button"
