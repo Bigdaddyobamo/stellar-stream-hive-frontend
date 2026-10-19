@@ -133,6 +133,14 @@ export default function ReceivingPage() {
         <EmptyState
           title="No incoming streams yet"
           description="Streams sent to your address will appear here once the indexer picks them up."
+          action={
+            wallet.isConnected && wallet.publicKey ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="font-mono text-sm text-muted">{shortenAddress(wallet.publicKey)}</span>
+                <CopyButton value={wallet.publicKey} label="Copy address" />
+              </div>
+            ) : undefined
+          }
         />
       ) : visibleStreams.length === 0 ? (
         <EmptyState title="No matching streams" description="Try a different status filter or search." />

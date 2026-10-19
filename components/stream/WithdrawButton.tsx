@@ -148,6 +148,7 @@ export function WithdrawButton({
         <button
           type="button"
           onClick={() => setUseCustom(false)}
+          aria-pressed={!useCustom}
           className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
             !useCustom ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"
           }`}
@@ -157,6 +158,7 @@ export function WithdrawButton({
         <button
           type="button"
           onClick={() => setUseCustom(true)}
+          aria-pressed={useCustom}
           className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
             useCustom ? "border-primary bg-primary/10 text-primary" : "border-border text-muted"
           }`}
