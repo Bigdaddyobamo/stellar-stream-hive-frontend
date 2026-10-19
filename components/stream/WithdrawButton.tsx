@@ -162,7 +162,7 @@ export function WithdrawButton({
         <button type="button" onClick={handleWithdraw} disabled={isBusy} className="btn-primary flex-1">
           {isBusy ? (
             <>
-              <Spinner size="sm" />
+              <Spinner size="sm" decorative />
               {status === "checking" && "Checking on-chain balance…"}
               {status === "signing" && "Confirm in wallet…"}
               {status === "submitting" && "Submitting…"}

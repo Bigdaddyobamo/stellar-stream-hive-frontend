@@ -15,10 +15,9 @@ import { createStreamOnChain, isStreamContractConfigured, ContractNotConfiguredE
 import { describeFreighterError } from "@/lib/freighter";
 import { parseAmountToBaseUnits, stellarExpertTxUrl } from "@/lib/format";
 import type { TokenInfo } from "@/types";
+import { ONE_DAY_MS } from "@/lib/constants";
 
 type Status = "idle" | "creating" | "success" | "error";
-
-const ONE_DAY_MS = 86_400_000;
 
 export function CreateStreamForm() {
   const wallet = useWallet();

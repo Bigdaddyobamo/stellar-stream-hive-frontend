@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchLatestLedgerSnapshot, type LedgerSnapshot } from "@/lib/stellar";
 import { dateToEstimatedLedger } from "@/lib/streaming";
+import { ONE_DAY_MS } from "@/lib/constants";
 
 export interface ScheduleInputProps {
   startDate: Date;
@@ -108,7 +109,7 @@ export function ScheduleInput({
             checked={hasCliff}
             onChange={(e) => {
               setHasCliff(e.target.checked);
-              onCliffDateChange(e.target.checked ? new Date(startDate.getTime() + 86_400_000) : null);
+              onCliffDateChange(e.target.checked ? new Date(startDate.getTime() + ONE_DAY_MS) : null);
             }}
             className="h-4 w-4 rounded border-border bg-background accent-primary"
           />
