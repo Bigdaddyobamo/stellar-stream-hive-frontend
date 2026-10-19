@@ -151,6 +151,25 @@ that knows their wire formats:
   `withdrawable_amount` and `get_stream`. Argument order matters here — Soroban
   passes arguments positionally — and is pinned in `lib/contracts.ts`.
 
+### Where each kind of data comes from
+
+```mermaid
+flowchart LR
+  UI["Frontend"]
+  API["Indexer API<br/>streams, stats, ready"]
+  RPC["Soroban RPC"]
+  Freighter["Freighter wallet"]
+
+  UI -- "reads (GET)" --> API
+  UI -- "simulates contract calls" --> RPC
+  UI -- "asks for a signature" --> Freighter
+  Freighter -- "signed transaction" --> UI
+  UI -- "submits signed transaction" --> RPC
+```
+
+Reads come from the indexer API. Contract view calls and transaction simulations go through
+Soroban RPC. Writes are signed in Freighter and then submitted to Soroban RPC.
+
 ## Stream lists
 
 `/sending` and `/receiving` can be filtered by status (all / live / completed /

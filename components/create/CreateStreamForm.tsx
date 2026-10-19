@@ -55,11 +55,9 @@ export function CreateStreamForm() {
     isStreamContractConfigured();
 
   async function handleSubmit() {
-    if (!wallet.publicKey) {
-      await wallet.connect();
-      return;
-    }
-    if (!canSubmit) return;
+    // The submit button only renders once the wallet is connected, so the sender is set here.
+    const sender = wallet.publicKey;
+    if (!sender || !canSubmit) return;
 
     setError(null);
     setStatus("creating");
@@ -76,7 +74,7 @@ export function CreateStreamForm() {
       // No token `approve` is needed: the vault pulls the deposit with the sender's
       // signed `transfer`, authorised by this transaction (verified on testnet).
       const created = await createStreamOnChain({
-        sender: wallet.publicKey,
+        sender,
         recipient,
         tokenContractId: token.contractId,
         totalAmount: totalAmountBaseUnits,
