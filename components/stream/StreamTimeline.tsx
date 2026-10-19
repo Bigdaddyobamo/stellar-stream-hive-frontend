@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchLatestLedgerSnapshot, type LedgerSnapshot } from "@/lib/stellar";
 import { estimateCurrentLedger } from "@/lib/streaming";
 import { format } from "date-fns";
+import { RESYNC_MS, TICK_MS } from "@/lib/constants";
 
 export interface StreamTimelineProps {
   startLedger: number;
@@ -47,7 +48,7 @@ export function StreamTimeline({
           if (mountedRef.current) setReference(snap);
         })
         .catch(() => undefined);
-    }, 30_000);
+    }, RESYNC_MS);
 
     return () => {
       mountedRef.current = false;
@@ -57,7 +58,7 @@ export function StreamTimeline({
 
   useEffect(() => {
     if (!enabled) return;
-    const tickInterval = setInterval(() => setTick((t) => t + 1), 1000);
+    const tickInterval = setInterval(() => setTick((t) => t + 1), TICK_MS);
     return () => clearInterval(tickInterval);
   }, [enabled]);
 

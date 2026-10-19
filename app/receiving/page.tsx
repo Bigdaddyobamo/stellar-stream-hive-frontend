@@ -5,12 +5,19 @@ import { useWallet } from "@/hooks/useWallet";
 import { useStreams } from "@/hooks/useStreams";
 import { StreamCard } from "@/components/stream/StreamCard";
 import { StreamFilterBar } from "@/components/stream/StreamFilterBar";
+import { RefreshButton } from "@/components/stream/RefreshButton";
 import { TotalWithdrawable } from "@/components/stream/TotalWithdrawable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
-import { CardSkeletonGrid } from "@/components/ui/CardSkeleton";
-import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
+import {
+  countByFilter,
+  filterStreams,
+  searchStreams,
+  sortStreams,
+  type StreamFilter,
+  type StreamSort,
+} from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { fetchWithdrawableOnChain, withdrawOnChain, ContractNotConfiguredError } from "@/lib/contracts";
 import { describeFreighterError } from "@/lib/freighter";
@@ -19,8 +26,13 @@ export default function ReceivingPage() {
   const wallet = useWallet();
   const { streams, isLoading, error, apiConfigured, refetch } = useStreams(wallet.publicKey, "recipient");
   const [filter, setFilter] = useState<StreamFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<StreamSort>("default");
   const counts = useMemo(() => countByFilter(streams), [streams]);
-  const visibleStreams = useMemo(() => filterStreams(streams, filter), [streams, filter]);
+  const visibleStreams = useMemo(
+    () => sortStreams(searchStreams(filterStreams(streams, filter), query), sort),
+    [streams, filter, query, sort]
+  );
   const [withdrawAllStatus, setWithdrawAllStatus] = useState<"idle" | "running" | "done">("idle");
   const [withdrawAllError, setWithdrawAllError] = useState<string | null>(null);
 
@@ -63,25 +75,28 @@ export default function ReceivingPage() {
           <h1 className="text-3xl font-bold">Streams you&apos;re receiving</h1>
           <p className="mt-1 text-muted">Streams where your connected wallet is the recipient.</p>
         </div>
-        {withdrawableStreams.length > 0 && (
-          <div className="flex items-center gap-3">
-            <TotalWithdrawable streams={withdrawableStreams} />
-            <button
-              type="button"
-              onClick={handleWithdrawAll}
-              disabled={withdrawAllStatus === "running"}
-              className="btn-primary"
-            >
-              {withdrawAllStatus === "running" ? (
-                <>
-                  <Spinner size="sm" /> Withdrawing…
-                </>
-              ) : (
-                `Withdraw All (${withdrawableStreams.length})`
-              )}
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <RefreshButton onRefresh={refetch} isLoading={isLoading} />
+          {withdrawableStreams.length > 0 && (
+            <>
+              <TotalWithdrawable streams={withdrawableStreams} />
+              <button
+                type="button"
+                onClick={handleWithdrawAll}
+                disabled={withdrawAllStatus === "running"}
+                className="btn-primary"
+              >
+                {withdrawAllStatus === "running" ? (
+                  <>
+                    <Spinner size="sm" /> Withdrawing…
+                  </>
+                ) : (
+                  `Withdraw All (${withdrawableStreams.length})`
+                )}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {withdrawAllError && <p className="mb-4 text-sm text-danger">{withdrawAllError}</p>}
@@ -100,6 +115,10 @@ export default function ReceivingPage() {
         <StreamFilterBar
           value={filter}
           onChange={setFilter}
+          query={query}
+          onQueryChange={setQuery}
+          sort={sort}
+          onSortChange={setSort}
           counts={counts}
           exportable={visibleStreams}
           exportName="stellar-stream-hive-receiving-streams"
@@ -116,7 +135,7 @@ export default function ReceivingPage() {
           description="Streams sent to your address will appear here once the indexer picks them up."
         />
       ) : visibleStreams.length === 0 ? (
-        <EmptyState title="No matching streams" description="Try a different status filter." />
+        <EmptyState title="No matching streams" description="Try a different status filter or search." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleStreams.map((stream) => (
