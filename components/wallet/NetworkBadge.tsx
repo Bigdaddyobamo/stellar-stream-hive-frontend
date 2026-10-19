@@ -10,7 +10,7 @@ import { NETWORK, SOROBAN_RPC_URL } from "@/lib/stellar";
  * connected Freighter wallet is pointed at a different one — signing a
  * transaction against the wrong network is a common, confusing failure mode.
  */
-export function NetworkSelector() {
+export function NetworkBadge() {
   const wallet = useWallet();
   const [rpcTooltip, setRpcTooltip] = useState(`This app talks to ${SOROBAN_RPC_URL}`);
 
