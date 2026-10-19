@@ -52,6 +52,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## npm scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Starts the development server on [http://localhost:3000](http://localhost:3000) with hot reload |
+| `npm run build` | Creates a production build and runs the full TypeScript and Next.js checks |
+| `npm run start` | Serves the production build made by `npm run build` |
+| `npm run lint` | Runs ESLint with the `next/core-web-vitals` rules |
+| `npm run typecheck` | Runs `tsc --noEmit` in strict mode |
+| `npm test` | Runs the Vitest unit tests once |
+| `npm run test:watch` | Runs the Vitest unit tests and re-runs them on every file change |
+
 ## Environment variables
 
 See [`.env.example`](./.env.example) for the full, documented list. In short:
