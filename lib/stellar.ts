@@ -3,7 +3,7 @@
  * across the app: building a Soroban RPC server client, fetching the latest
  * ledger, and validating Stellar addresses.
  */
-import { rpc as SorobanRpc, Networks } from "@stellar/stellar-sdk";
+import { rpc as SorobanRpc, Networks, StrKey } from "@stellar/stellar-sdk";
 
 export const NETWORK = (process.env.NEXT_PUBLIC_STELLAR_NETWORK || "TESTNET") as
   | "TESTNET"
@@ -53,18 +53,15 @@ export async function fetchLatestLedgerSnapshot(): Promise<LedgerSnapshot> {
 
 /**
  * Validates a Stellar public/contract address:
- * - G-addresses (accounts): 56 chars, base32, starts with 'G'
- * - C-addresses (contracts): 56 chars, base32, starts with 'C'
+ * - G-addresses (accounts) with a valid StrKey checksum
+ * - C-addresses (contracts) with a valid StrKey checksum
  */
-const BASE32_ALPHABET = /^[A-Z2-7]+$/;
-
 export function isValidStellarAddress(address: string, kind: "account" | "contract" | "any" = "any"): boolean {
-  if (typeof address !== "string" || address.length !== 56) return false;
-  if (!BASE32_ALPHABET.test(address)) return false;
+  if (typeof address !== "string") return false;
 
-  if (kind === "account") return address.startsWith("G");
-  if (kind === "contract") return address.startsWith("C");
-  return address.startsWith("G") || address.startsWith("C");
+  if (kind === "account") return StrKey.isValidEd25519PublicKey(address);
+  if (kind === "contract") return StrKey.isValidContract(address);
+  return StrKey.isValidEd25519PublicKey(address) || StrKey.isValidContract(address);
 }
 
 export function isValidRecipientAddress(address: string): boolean {
