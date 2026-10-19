@@ -119,6 +119,32 @@ npm run build
 
 This runs a full TypeScript + Next.js production build and must succeed with no type errors.
 
+## Troubleshooting
+
+**Freighter is not detected.** The app shows a "not installed" message with an install link
+when the browser has no Freighter extension. Install it from
+[freighter.app](https://www.freighter.app/), reload the page, then connect again.
+
+**"Wrong network selected in Freighter. Expected TESTNET, got …".** Freighter is on a different
+network from the one this app is configured for. Open Freighter, switch the network to
+**Testnet**, and reconnect. The expected network comes from `NEXT_PUBLIC_STELLAR_NETWORK`.
+
+**"… contract ID is not configured."** One of `NEXT_PUBLIC_STREAM_CONTRACT_ID`,
+`NEXT_PUBLIC_VAULT_CONTRACT_ID` or `NEXT_PUBLIC_REGISTRY_CONTRACT_ID` is empty. Copy
+`.env.example` to `.env.local`, which ships the testnet ids, or set the ids for your own
+deployment. Restart `npm run dev` after changing `.env.local`, because Next.js reads it only at
+startup.
+
+**CORS errors in the browser console when the app calls the API.** The indexer API
+(`NEXT_PUBLIC_API_BASE_URL`) must allow requests from the origin you are running the app on,
+such as `http://localhost:3000`. Check the API's CORS settings in
+[`stellar-stream-hive-api`](https://github.com/Stellar-Hive/stellar-stream-hive-api), or point
+`NEXT_PUBLIC_API_BASE_URL` at an instance that allows your origin. If the variable is empty, the
+app shows an empty or loading state instead of data, which is expected.
+
+**Stats or stream lists stay empty.** Confirm `NEXT_PUBLIC_API_BASE_URL` is set and that the
+API is reachable. An unset variable is shown as an empty state, not as an error.
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
