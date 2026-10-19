@@ -52,7 +52,7 @@ export function StreamProgress({
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-border">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-primary-dark to-primary transition-[width] duration-1000 ease-linear"
+          className="h-full rounded-full bg-gradient-to-r from-primary-dark to-primary transition-[width] duration-1000 ease-linear motion-reduce:transition-none"
           style={{ width: `${percent}%` }}
         />
       </div>

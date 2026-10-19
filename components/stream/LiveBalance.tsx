@@ -79,7 +79,7 @@ export function LiveBalance({
     <div>
       <div className="mb-1.5 flex items-center gap-2 text-sm text-muted">
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60 motion-reduce:animate-none" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
         </span>
         {label}

@@ -14,6 +14,10 @@
   ::selection {
     @apply bg-primary/30 text-white;
   }
+
+  a:focus-visible {
+    @apply rounded-sm outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
 }
 
 @layer components {
@@ -22,15 +26,15 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-background transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-background transition hover:bg-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-5 py-2.5 font-semibold text-white transition hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-5 py-2.5 font-semibold text-white transition hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-danger/40 bg-danger/10 px-5 py-2.5 font-semibold text-danger transition hover:bg-danger/20 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-danger/40 bg-danger/10 px-5 py-2.5 font-semibold text-danger transition hover:bg-danger/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .input-field {

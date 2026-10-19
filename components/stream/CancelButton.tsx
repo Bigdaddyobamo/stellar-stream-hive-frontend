@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cancelStreamOnChain, fetchStreamOnChain, ContractNotConfiguredError } from "@/lib/contracts";
 import { fetchLatestLedgerSnapshot } from "@/lib/stellar";
 import { computeStreamedAmount } from "@/lib/streaming";
@@ -46,16 +46,42 @@ export function CancelButton({
   const [split, setSplit] = useState<Split | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    const panel = panelRef.current;
+    if (panel) {
+      const focusable = getFocusableElements(panel);
+      (focusable[0] ?? panel).focus();
+    }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && status !== "signing") {
-        setOpen(false);
-        setStatus("idle");
-        setSplit(null);
-        setError(null);
-        setTxHash(null);
+        close();
+        return;
+      }
+      if (e.key === "Tab") {
+        const currentPanel = panelRef.current;
+        if (!currentPanel) return;
+        const focusable = getFocusableElements(currentPanel);
+        if (focusable.length === 0) {
+          e.preventDefault();
+          currentPanel.focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey) {
+          if (active === first || !currentPanel.contains(active)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (active === last || !currentPanel.contains(active)) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -114,11 +140,12 @@ export function CancelButton({
     setSplit(null);
     setError(null);
     setTxHash(null);
+    triggerRef.current?.focus();
   }
 
   if (!open) {
     return (
-      <button type="button" onClick={openModal} className="btn-danger">
+      <button type="button" ref={triggerRef} onClick={openModal} className="btn-danger">
         Cancel stream
       </button>
     );
@@ -134,7 +161,7 @@ export function CancelButton({
         if (e.target === e.currentTarget && status !== "signing") close();
       }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6">
+      <div ref={panelRef} tabIndex={-1} className="w-full max-w-md rounded-2xl border border-border bg-surface p-6">
         <h3 id="cancel-stream-heading" className="mb-1 text-lg font-semibold">
           Cancel this stream?
         </h3>
@@ -201,6 +228,15 @@ export function CancelButton({
         </div>
       </div>
     </div>
+  );
+}
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => el.offsetParent !== null || el === document.activeElement,
   );
 }
 
