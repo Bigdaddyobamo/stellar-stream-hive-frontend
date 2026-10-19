@@ -33,6 +33,25 @@ Contract-calling features (create/withdraw/cancel a stream) require
 only working on UI/UX that doesn't touch live contract state, you can leave these unset — the
 app will show a clear "not yet configured" state rather than erroring.
 
+## Running against a local API and testnet contracts
+
+The app shows real streams only when it can reach an indexer API. To try the full flow:
+
+1. **Run the indexer.** In a clone of
+   [stellar-stream-hive-api](https://github.com/Stellar-Hive/stellar-stream-hive-api), copy
+   `.env.example` to `.env`, set `STREAM_CONTRACT_ID` to the testnet contract ID from that file,
+   and run `cargo run`. It listens on `http://localhost:8080` by default. It picks up new
+   streams on its next poll, which is every 10 seconds by default.
+2. **Point the frontend at it.** In `.env.local`, set
+   `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080`, then restart `npm run dev`.
+3. **Fund two testnet accounts.** In Freighter, switch to **Testnet** and create or import a
+   sender and a recipient account. Fund each one with Friendbot at
+   `https://friendbot.stellar.org/?addr=<PUBLIC_KEY>`. Friendbot only works on testnet, so never
+   use a mainnet key here.
+4. **Create a test stream.** Connect the sender account, enter the recipient's address, keep
+   XLM as the token, choose a small amount, and submit. Freighter asks you to sign. Once the
+   transaction confirms, the stream shows up in the sender's list after the indexer's next poll.
+
 ## Development guidelines
 
 - **TypeScript strictness**: the project builds with `strict: true`. Please don't introduce
@@ -53,6 +72,22 @@ app will show a clear "not yet configured" state rather than erroring.
 - **No fabricated data.** If the indexer API or a contract call isn't available, show a loading
   or empty state that says so. Never invent numbers, contract IDs, or transaction hashes to make
   a screen look populated.
+
+## Accessibility checklist
+
+Check these for every new or changed component:
+
+- **Labels:** every control has an accessible name, from visible text, `aria-label` or
+  `aria-labelledby`. Icon-only buttons need a label.
+- **Focus order:** focus moves in the same order as the layout, and no visible control is
+  skipped.
+- **Keyboard use:** anything clickable can also be reached with Tab and activated with Enter or
+  Space. Don't rely on hover to reveal something.
+- **Colour contrast:** text and icons meet WCAG AA contrast in both light and dark themes.
+  Colour alone must not carry meaning.
+- **Reduced motion:** animations respect `prefers-reduced-motion`.
+- **Dynamic content:** loading, status and error messages that appear without a page change use
+  `role="status"`, `role="alert"` or `aria-live`.
 
 ## Before opening a PR
 

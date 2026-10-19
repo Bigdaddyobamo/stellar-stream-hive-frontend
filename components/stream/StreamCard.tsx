@@ -4,6 +4,7 @@ import { formatTokenAmount, shortenAddress } from "@/lib/format";
 import { computeProgress } from "@/lib/streaming";
 import { StreamStatusBadge } from "@/components/stream/StreamStatusBadge";
 import { LiveBalance } from "@/components/stream/LiveBalance";
+import { CopyButton } from "@/components/ui/CopyButton";
 
 export interface StreamCardProps {
   stream: Stream;
@@ -24,7 +25,12 @@ export function StreamCard({ stream, role, actions }: StreamCardProps) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-muted">{counterpartLabel}</p>
-          <p className="font-mono text-sm">{shortenAddress(counterpartAddress)}</p>
+          <div className="flex items-center gap-1">
+            <p className="font-mono text-sm" title={counterpartAddress}>
+              {shortenAddress(counterpartAddress)}
+            </p>
+            <CopyButton value={counterpartAddress} label="Copy address" />
+          </div>
         </div>
         <StreamStatusBadge status={stream.status} />
       </div>

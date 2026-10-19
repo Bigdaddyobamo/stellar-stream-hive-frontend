@@ -6,11 +6,19 @@ import { useWallet } from "@/hooks/useWallet";
 import { useStreams } from "@/hooks/useStreams";
 import { StreamCard } from "@/components/stream/StreamCard";
 import { StreamFilterBar } from "@/components/stream/StreamFilterBar";
+import { RefreshButton } from "@/components/stream/RefreshButton";
 import { CancelButton } from "@/components/stream/CancelButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Spinner } from "@/components/ui/Spinner";
-import { countByFilter, filterStreams, type StreamFilter } from "@/lib/streamList";
+import {
+  countByFilter,
+  filterStreams,
+  searchStreams,
+  sortStreams,
+  type StreamFilter,
+  type StreamSort,
+} from "@/lib/streamList";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 import { formatTokenAmount } from "@/lib/format";
 
@@ -18,8 +26,13 @@ export default function SendingPage() {
   const wallet = useWallet();
   const { streams, isLoading, error, apiConfigured, refetch } = useStreams(wallet.publicKey, "sender");
   const [filter, setFilter] = useState<StreamFilter>("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<StreamSort>("default");
   const counts = useMemo(() => countByFilter(streams), [streams]);
-  const visibleStreams = useMemo(() => filterStreams(streams, filter), [streams, filter]);
+  const visibleStreams = useMemo(
+    () => sortStreams(searchStreams(filterStreams(streams, filter), query), sort),
+    [streams, filter, query, sort]
+  );
 
   if (!wallet.isConnected) {
     return (
@@ -45,14 +58,17 @@ export default function SendingPage() {
           <h1 className="text-3xl font-bold">Streams you&apos;re sending</h1>
           <p className="mt-1 text-muted">Streams where your connected wallet is the sender.</p>
         </div>
-        {activeStreams.length > 0 && (
-          <div className="card px-5 py-3 text-right">
-            <p className="text-xs text-muted">Total outgoing commitment</p>
-            <p className="mono-tabular text-xl font-bold text-primary">
-              {formatTokenAmount(totalOutgoing, commonSymbol, commonDecimals, 4)}
-            </p>
-          </div>
-        )}
+        <div className="flex flex-wrap items-end gap-3">
+          <RefreshButton onRefresh={refetch} isLoading={isLoading} />
+          {activeStreams.length > 0 && (
+            <div className="card px-5 py-3 text-right">
+              <p className="text-xs text-muted">Total outgoing commitment</p>
+              <p className="mono-tabular text-xl font-bold text-primary">
+                {formatTokenAmount(totalOutgoing, commonSymbol, commonDecimals, 4)}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {!apiConfigured && (
@@ -66,6 +82,10 @@ export default function SendingPage() {
         <StreamFilterBar
           value={filter}
           onChange={setFilter}
+          query={query}
+          onQueryChange={setQuery}
+          sort={sort}
+          onSortChange={setSort}
           counts={counts}
           exportable={visibleStreams}
           exportName="stellar-stream-hive-sending-streams"
@@ -73,9 +93,7 @@ export default function SendingPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
-        </div>
+        <CardSkeletonGrid />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : streams.length === 0 ? (
@@ -89,7 +107,7 @@ export default function SendingPage() {
           }
         />
       ) : visibleStreams.length === 0 ? (
-        <EmptyState title="No matching streams" description="Try a different status filter." />
+        <EmptyState title="No matching streams" description="Try a different status filter or search." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleStreams.map((stream) => (

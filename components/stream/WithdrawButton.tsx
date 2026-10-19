@@ -38,6 +38,7 @@ export function WithdrawButton({
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [isFillingMax, setIsFillingMax] = useState(false);
 
   const isRecipient = connectedAddress && connectedAddress === recipientAddress;
   if (!isRecipient) return null;
@@ -78,6 +79,25 @@ export function WithdrawButton({
         setError(describeFreighterError(err));
       }
       setStatus("error");
+    }
+  }
+
+  // Fills the custom field from the real on-chain amount. The field is only a convenience:
+  // handleWithdraw re-fetches and clamps again at submit time.
+  async function handleFillMax() {
+    setError(null);
+    setIsFillingMax(true);
+    try {
+      const actualWithdrawable = await fetchWithdrawableOnChain(streamId);
+      setCustomAmount(formatBaseUnits(actualWithdrawable, tokenDecimals, { maxDecimals: tokenDecimals, grouped: false }));
+    } catch (err) {
+      if (err instanceof ContractNotConfiguredError) {
+        setError(err.message);
+      } else {
+        setError(describeFreighterError(err));
+      }
+    } finally {
+      setIsFillingMax(false);
     }
   }
 
@@ -148,20 +168,24 @@ export function WithdrawButton({
       </div>
 
       {useCustom && (
-        <>
-          <label htmlFor="withdraw-custom-amount" className="sr-only">
-            Custom withdrawal amount in {tokenSymbol}
-          </label>
+        <div className="mb-3 flex gap-2">
           <input
-            id="withdraw-custom-amount"
             type="text"
             inputMode="decimal"
             placeholder={`Amount in ${tokenSymbol}`}
             value={customAmount}
             onChange={(e) => setCustomAmount(e.target.value)}
-            className="input-field mb-3"
+            className="input-field flex-1"
           />
-        </>
+          <button
+            type="button"
+            onClick={handleFillMax}
+            disabled={isBusy || isFillingMax}
+            className="btn-secondary"
+          >
+            {isFillingMax ? <Spinner size="sm" /> : "Max"}
+          </button>
+        </div>
       )}
 
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}
@@ -170,7 +194,7 @@ export function WithdrawButton({
         <button type="button" onClick={handleWithdraw} disabled={isBusy} className="btn-primary flex-1">
           {isBusy ? (
             <>
-              <Spinner size="sm" />
+              <Spinner size="sm" decorative />
               {status === "checking" && "Checking on-chain balance…"}
               {status === "signing" && "Confirm in wallet…"}
               {status === "submitting" && "Submitting…"}
