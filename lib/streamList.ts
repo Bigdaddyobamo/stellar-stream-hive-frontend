@@ -3,6 +3,7 @@
  * per-status counts, and CSV export. Kept free of React so they're unit tested
  * directly (see `lib/streamList.test.ts`).
  */
+import { format } from "date-fns";
 import { formatBaseUnits } from "./format";
 import type { Stream, StreamStatus } from "@/types";
 
@@ -33,6 +34,47 @@ export function matchesFilter(stream: Stream, filter: StreamFilter): boolean {
 
 export function filterStreams(streams: Stream[], filter: StreamFilter): Stream[] {
   return filter === "all" ? streams : streams.filter((s) => matchesFilter(s, filter));
+}
+
+/**
+ * Case-insensitive substring match against a stream's id, sender and recipient address. A blank
+ * query returns the input unchanged.
+ */
+export function searchStreams(streams: Stream[], query: string): Stream[] {
+  const needle = query.trim().toLowerCase();
+  if (needle === "") return streams;
+  return streams.filter((s) => [s.id, s.sender, s.recipient].some((field) => field.toLowerCase().includes(needle)));
+}
+
+export type StreamSort = "default" | "newest" | "ending" | "largest";
+
+export const STREAM_SORTS: { value: StreamSort; label: string }[] = [
+  { value: "default", label: "Default order" },
+  { value: "newest", label: "Newest first" },
+  { value: "ending", label: "Ending soonest" },
+  { value: "largest", label: "Largest amount" },
+];
+
+/**
+ * Returns a sorted copy; the input is never mutated. "newest" orders by start ledger, "ending" by
+ * end ledger, and "largest" by total amount compared as BigInt so values beyond 2^53 stay exact.
+ * "default" keeps the order the API returned.
+ */
+export function sortStreams(streams: Stream[], key: StreamSort): Stream[] {
+  const sorted = [...streams];
+  switch (key) {
+    case "default":
+      return sorted;
+    case "newest":
+      return sorted.sort((a, b) => b.startLedger - a.startLedger);
+    case "ending":
+      return sorted.sort((a, b) => a.endLedger - b.endLedger);
+    case "largest":
+      return sorted.sort((a, b) => {
+        const diff = BigInt(b.totalAmount) - BigInt(a.totalAmount);
+        return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+      });
+  }
 }
 
 export function countByFilter(streams: Stream[]): Record<StreamFilter, number> {
@@ -67,6 +109,11 @@ export function csvCell(value: string | number | boolean | undefined): string {
   let text = value === undefined ? "" : String(value);
   if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/** Export filename stamped with the local calendar date, so downloads on different days don't collide. */
+export function csvFilename(exportName: string, date: Date = new Date()): string {
+  return `${exportName}-${format(date, "yyyy-MM-dd")}.csv`;
 }
 
 /** Serializes streams to CSV. Amounts are human-readable decimals in the token's own units. */
