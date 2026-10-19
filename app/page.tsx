@@ -20,6 +20,34 @@ const STEPS = [
   },
 ];
 
+const FAQS = [
+  {
+    question: "What is a cliff?",
+    answer:
+      "An optional date before which nothing can be withdrawn. Streaming still runs from the start date, so once the cliff passes, everything accrued since the start becomes withdrawable at once. Until then the stream shows as Cliff pending.",
+  },
+  {
+    question: "Can I cancel a stream?",
+    answer:
+      "Only if the sender chose to make it cancellable when creating it. Cancelling stops accrual: the recipient keeps what had streamed up to that moment, and the unstreamed remainder is refunded to the sender. Cancelling before the cliff refunds the full deposit, since nothing has accrued yet.",
+  },
+  {
+    question: "Can the recipient withdraw part of the balance?",
+    answer:
+      "Yes. The recipient can withdraw the full withdrawable balance or any custom amount up to it, as often as they like. The withdrawable amount is re-checked on-chain before every withdrawal.",
+  },
+  {
+    question: "Where are the funds held?",
+    answer:
+      "The full amount is deposited into the vault contract when the stream is created. Stream contracts never hold funds themselves; the vault releases tokens only as the recipient withdraws or the sender cancels.",
+  },
+  {
+    question: "What do I need to get started?",
+    answer:
+      "A Freighter wallet browser extension set to the network this app is deployed on, the token you want to stream, and a small amount of XLM to cover network fees.",
+  },
+];
+
 export default function LandingPage() {
   return (
     <div>
@@ -70,6 +98,23 @@ export default function LandingPage() {
               <h3 className="text-lg font-semibold">{step.title}</h3>
               <p className="mt-2 text-sm text-muted">{step.description}</p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
+        <h2 className="text-center text-3xl font-bold">Frequently asked questions</h2>
+        <div className="mt-10 space-y-3">
+          {FAQS.map((faq) => (
+            <details key={faq.question} className="group rounded-xl border border-border bg-surface px-5 py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold [&::-webkit-details-marker]:hidden">
+                {faq.question}
+                <span aria-hidden="true" className="text-muted transition-transform group-open:rotate-180">
+                  ▾
+                </span>
+              </summary>
+              <p className="mt-3 text-sm text-muted">{faq.answer}</p>
+            </details>
           ))}
         </div>
       </section>

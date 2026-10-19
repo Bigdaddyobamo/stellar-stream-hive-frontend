@@ -20,6 +20,13 @@ import { ONE_DAY_MS } from "@/lib/constants";
 type Status = "idle" | "creating" | "success" | "error";
 
 export function CreateStreamForm() {
+  // Remounting the fields is the simplest full reset: every input, the token lookup and the
+  // success/error state all return to their defaults.
+  const [formKey, setFormKey] = useState(0);
+  return <CreateStreamFields key={formKey} onReset={() => setFormKey((key) => key + 1)} />;
+}
+
+function CreateStreamFields({ onReset }: { onReset: () => void }) {
   const wallet = useWallet();
   const router = useRouter();
 
@@ -111,13 +118,18 @@ export function CreateStreamForm() {
         >
           View transaction on Stellar Expert
         </a>
-        <button
-          type="button"
-          onClick={() => router.push(`/streams/${result.streamId}`)}
-          className="btn-primary mt-6 w-full"
-        >
-          View stream
-        </button>
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => router.push(`/streams/${result.streamId}`)}
+            className="btn-primary w-full"
+          >
+            View stream
+          </button>
+          <button type="button" onClick={onReset} className="btn-secondary w-full">
+            Create another stream
+          </button>
+        </div>
       </div>
     );
   }
