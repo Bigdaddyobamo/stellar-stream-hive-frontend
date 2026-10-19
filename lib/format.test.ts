@@ -3,6 +3,7 @@ import {
   formatBaseUnits,
   formatRate,
   formatTokenAmount,
+  formatUtcOffset,
   parseAmountToBaseUnits,
   shortenAddress,
   stellarExpertAccountUrl,
@@ -104,5 +105,30 @@ describe("formatRate", () => {
   it("copes with zero and non-finite rates", () => {
     expect(formatRate(0, "XLM").perDay).toBe("0 XLM");
     expect(formatRate(Number.NaN, "XLM").perSecond).toBe("0 XLM");
+  });
+});
+
+describe("formatUtcOffset", () => {
+  const winter = new Date("2026-01-15T12:00:00Z");
+
+  it("formats whole-hour and half-hour offsets", () => {
+    expect(formatUtcOffset(winter, "Asia/Kolkata")).toBe("UTC+5:30");
+    expect(formatUtcOffset(winter, "America/St_Johns")).toBe("UTC-3:30");
+    expect(formatUtcOffset(winter, "Africa/Lagos")).toBe("UTC+1");
+    expect(formatUtcOffset(winter, "America/New_York")).toBe("UTC-5");
+  });
+
+  it("uses UTC+0 for zones with no offset", () => {
+    expect(formatUtcOffset(winter, "UTC")).toBe("UTC+0");
+  });
+
+  it("reflects daylight saving time for the given instant", () => {
+    const summer = new Date("2026-07-15T12:00:00Z");
+    expect(formatUtcOffset(winter, "America/New_York")).toBe("UTC-5");
+    expect(formatUtcOffset(summer, "America/New_York")).toBe("UTC-4");
+  });
+
+  it("returns null for an unknown timezone instead of throwing", () => {
+    expect(formatUtcOffset(winter, "Not/A_Zone")).toBeNull();
   });
 });

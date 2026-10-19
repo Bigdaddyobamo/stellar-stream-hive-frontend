@@ -15,12 +15,18 @@ import { createStreamOnChain, isStreamContractConfigured, ContractNotConfiguredE
 import { describeFreighterError } from "@/lib/freighter";
 import { parseAmountToBaseUnits, stellarExpertTxUrl } from "@/lib/format";
 import type { TokenInfo } from "@/types";
+import { ONE_DAY_MS } from "@/lib/constants";
 
 type Status = "idle" | "creating" | "success" | "error";
 
-const ONE_DAY_MS = 86_400_000;
-
 export function CreateStreamForm() {
+  // Remounting the fields is the simplest full reset: every input, the token lookup and the
+  // success/error state all return to their defaults.
+  const [formKey, setFormKey] = useState(0);
+  return <CreateStreamFields key={formKey} onReset={() => setFormKey((key) => key + 1)} />;
+}
+
+function CreateStreamFields({ onReset }: { onReset: () => void }) {
   const wallet = useWallet();
   const router = useRouter();
 
@@ -55,11 +61,9 @@ export function CreateStreamForm() {
     isStreamContractConfigured();
 
   async function handleSubmit() {
-    if (!wallet.publicKey) {
-      await wallet.connect();
-      return;
-    }
-    if (!canSubmit) return;
+    // The submit button only renders once the wallet is connected, so the sender is set here.
+    const sender = wallet.publicKey;
+    if (!sender || !canSubmit) return;
 
     setError(null);
     setStatus("creating");
@@ -76,7 +80,7 @@ export function CreateStreamForm() {
       // No token `approve` is needed: the vault pulls the deposit with the sender's
       // signed `transfer`, authorised by this transaction (verified on testnet).
       const created = await createStreamOnChain({
-        sender: wallet.publicKey,
+        sender,
         recipient,
         tokenContractId: token.contractId,
         totalAmount: totalAmountBaseUnits,
@@ -114,13 +118,18 @@ export function CreateStreamForm() {
         >
           View transaction on Stellar Expert
         </a>
-        <button
-          type="button"
-          onClick={() => router.push(`/streams/${result.streamId}`)}
-          className="btn-primary mt-6 w-full"
-        >
-          View stream
-        </button>
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => router.push(`/streams/${result.streamId}`)}
+            className="btn-primary w-full"
+          >
+            View stream
+          </button>
+          <button type="button" onClick={onReset} className="btn-secondary w-full">
+            Create another stream
+          </button>
+        </div>
       </div>
     );
   }
@@ -156,15 +165,22 @@ export function CreateStreamForm() {
           onEndDateChange={setEndDate}
         />
 
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={cancellable}
-            onChange={(e) => setCancellable(e.target.checked)}
-            className="h-4 w-4 rounded border-border bg-background accent-primary"
-          />
-          Sender can cancel this stream before it ends
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={cancellable}
+              onChange={(e) => setCancellable(e.target.checked)}
+              className="h-4 w-4 rounded border-border bg-background accent-primary"
+            />
+            Sender can cancel this stream before it ends
+          </label>
+          {!cancellable && (
+            <p className="text-xs text-warning">
+              Funds cannot be recovered by cancelling; they stream to the recipient until the end.
+            </p>
+          )}
+        </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
 

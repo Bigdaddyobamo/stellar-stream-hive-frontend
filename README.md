@@ -33,6 +33,18 @@ every 30 seconds to correct for drift. Actual withdrawals always re-fetch the re
 amount before submitting — the ticking estimate is a UI affordance, never the source of truth
 for a transaction.
 
+## npm scripts
+
+| Script | Description |
+| --- | --- |
+| `dev` | Start the Next.js development server |
+| `build` | Production build |
+| `start` | Serve the production build |
+| `lint` | Run ESLint |
+| `typecheck` | Run the TypeScript compiler with `--noEmit` |
+| `test` | Run Vitest once |
+| `test:watch` | Run Vitest in watch mode |
+
 ## Tech stack
 
 - [Next.js 14](https://nextjs.org/) (App Router) + TypeScript
@@ -151,8 +163,36 @@ that knows their wire formats:
   `withdrawable_amount` and `get_stream`. Argument order matters here — Soroban
   passes arguments positionally — and is pinned in `lib/contracts.ts`.
 
+### Where each kind of data comes from
+
+```mermaid
+flowchart LR
+  UI["Frontend"]
+  API["Indexer API<br/>streams, stats, ready"]
+  RPC["Soroban RPC"]
+  Freighter["Freighter wallet"]
+
+  UI -- "reads (GET)" --> API
+  UI -- "simulates contract calls" --> RPC
+  UI -- "asks for a signature" --> Freighter
+  Freighter -- "signed transaction" --> UI
+  UI -- "submits signed transaction" --> RPC
+```
+
+Reads come from the indexer API. Contract view calls and transaction simulations go through
+Soroban RPC. Writes are signed in Freighter and then submitted to Soroban RPC.
+
 ## Stream lists
 
 `/sending` and `/receiving` can be filtered by status (all / live / completed /
 cancelled) and exported to CSV. The export contains exactly the streams currently
 shown, with amounts as human-readable decimals.
+
+## Troubleshooting
+
+| Problem | Cause | Fix |
+| --- | --- | --- |
+| "Freighter not detected" | Freighter extension not installed or page loaded before it initialised | Install [Freighter](https://www.freighter.app/), reload the page, and ensure it is enabled for this site |
+| Wrong network badge (e.g. Mainnet instead of Testnet) | `NEXT_PUBLIC_STELLAR_NETWORK` does not match the network selected in Freighter | Set the variable in `.env.local` to `testnet` or `mainnet` and restart the dev server |
+| CORS errors calling the indexer API | `NEXT_PUBLIC_API_BASE_URL` points to a server that does not allow the app's origin | Verify the URL in `.env.local` and ensure the API's CORS config includes your origin |
+| "Contract not configured" | `NEXT_PUBLIC_STREAM_CONTRACT_ID` is missing or invalid | Add the deployed contract ID to `.env.local` (see `.env.example`) |

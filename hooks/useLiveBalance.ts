@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchLatestLedgerSnapshot, type LedgerSnapshot } from "@/lib/stellar";
 import { computeProgress, computeWithdrawable, computeStreamedAmount, estimateCurrentLedger } from "@/lib/streaming";
 import type { LiveBalanceState } from "@/types";
-
-const TICK_MS = 1000;
-const RESYNC_MS = 30_000;
+import { RESYNC_MS, TICK_MS } from "@/lib/constants";
 
 export interface UseLiveBalanceParams {
   totalAmount: bigint;

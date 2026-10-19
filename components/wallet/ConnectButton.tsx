@@ -64,7 +64,7 @@ export function ConnectButton() {
       <button type="button" onClick={wallet.connect} disabled={wallet.isConnecting} className="btn-primary text-sm">
         {wallet.isConnecting ? (
           <>
-            <Spinner size="sm" /> Connecting…
+            <Spinner size="sm" decorative /> Connecting…
           </>
         ) : (
           "Connect Wallet"

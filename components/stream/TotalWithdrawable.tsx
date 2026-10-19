@@ -5,6 +5,7 @@ import { fetchLatestLedgerSnapshot, type LedgerSnapshot } from "@/lib/stellar";
 import { computeWithdrawable, estimateCurrentLedger } from "@/lib/streaming";
 import { formatTokenAmount } from "@/lib/format";
 import type { Stream } from "@/types";
+import { RESYNC_MS, TICK_MS } from "@/lib/constants";
 
 export interface TotalWithdrawableProps {
   streams: Stream[];
@@ -30,7 +31,7 @@ export function TotalWithdrawable({ streams }: TotalWithdrawableProps) {
         .catch(() => undefined);
     }
     sync();
-    const resync = setInterval(sync, 30_000);
+    const resync = setInterval(sync, RESYNC_MS);
     return () => {
       mountedRef.current = false;
       clearInterval(resync);
@@ -38,7 +39,7 @@ export function TotalWithdrawable({ streams }: TotalWithdrawableProps) {
   }, []);
 
   useEffect(() => {
-    const tick = setInterval(() => setTick((t) => t + 1), 1000);
+    const tick = setInterval(() => setTick((t) => t + 1), TICK_MS);
     return () => clearInterval(tick);
   }, []);
 

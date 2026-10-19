@@ -1,6 +1,8 @@
 interface SpinnerProps {
   size?: "sm" | "md" | "lg";
   className?: string;
+  /** Set when the spinner sits beside visible text, such as inside a button, so it is not announced twice. */
+  decorative?: boolean;
 }
 
 const SIZE_MAP: Record<NonNullable<SpinnerProps["size"]>, string> = {
@@ -10,12 +12,11 @@ const SIZE_MAP: Record<NonNullable<SpinnerProps["size"]>, string> = {
 };
 
 /** A minimal spinning-ring loading indicator. */
-export function Spinner({ size = "md", className = "" }: SpinnerProps) {
-  return (
-    <span
-      role="status"
-      aria-label="Loading"
-      className={`inline-block animate-spin rounded-full border-primary/25 border-t-primary ${SIZE_MAP[size]} ${className}`}
-    />
-  );
+export function Spinner({ size = "md", className = "", decorative = false }: SpinnerProps) {
+  const classes = `inline-block animate-spin rounded-full border-primary/25 border-t-primary ${SIZE_MAP[size]} ${className}`;
+
+  if (decorative) {
+    return <span aria-hidden="true" className={classes} />;
+  }
+  return <span role="status" aria-label="Loading" className={classes} />;
 }
