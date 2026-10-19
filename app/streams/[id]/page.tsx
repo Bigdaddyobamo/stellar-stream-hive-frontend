@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { format } from "date-fns";
 import { useStream } from "@/hooks/useStream";
 import { useWallet } from "@/hooks/useWallet";
 import { LiveBalance } from "@/components/stream/LiveBalance";
@@ -20,6 +21,7 @@ import {
   stellarExpertAccountUrl,
   stellarExpertTxUrl,
 } from "@/lib/format";
+import { getStreamContractId, isStreamContractConfigured } from "@/lib/contracts";
 import { AVERAGE_LEDGER_SECONDS } from "@/lib/streaming";
 import { STELLAR_EXPERT_NETWORK } from "@/lib/stellar";
 
@@ -59,6 +61,8 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
   const totalSeconds = (stream.endLedger - stream.startLedger) * AVERAGE_LEDGER_SECONDS;
   const ratePerSecond = totalSeconds > 0 ? totalTokens / totalSeconds : 0;
   const rate = formatRate(ratePerSecond, stream.token.symbol);
+  const contractConfigured = isStreamContractConfigured();
+  const contractId = contractConfigured ? getStreamContractId() : null;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
@@ -66,7 +70,13 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
         <Link href="/" className="text-sm text-muted hover:text-white">
           ← Back home
         </Link>
-        <StreamStatusBadge status={stream.status} />
+        <div className="flex items-center gap-3">
+          <CopyButton
+            value={() => (typeof window !== "undefined" ? window.location.href : "")}
+            label="Copy link"
+          />
+          <StreamStatusBadge status={stream.status} />
+        </div>
       </div>
 
       <div className="card mb-6">
@@ -122,8 +132,33 @@ export default function StreamDetailPage({ params }: { params: { id: string } })
             label="Total amount"
             value={formatTokenAmount(BigInt(stream.totalAmount), stream.token.symbol, stream.token.decimals, 4)}
           />
+          <DetailRow
+            label="Withdrawn"
+            value={formatTokenAmount(
+              BigInt(stream.withdrawnAmount),
+              stream.token.symbol,
+              stream.token.decimals,
+              4,
+            )}
+          />
           <DetailRow label="Rate" value={`~${rate.perDay} / day`} />
+          <DetailRow label="Start" value={format(stream.startTime, "PPpp")} />
+          <DetailRow label="End" value={format(stream.endTime, "PPpp")} />
+          {stream.cliffTime && <DetailRow label="Cliff" value={format(stream.cliffTime, "PPpp")} />}
           <DetailRow label="Cancellable" value={stream.cancellable ? "Yes" : "No"} />
+          {contractId && (
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <span className="text-muted">Stream contract</span>
+              <a
+                href={stellarExpertAccountUrl(contractId, STELLAR_EXPERT_NETWORK)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent underline"
+              >
+                View on Stellar Expert
+              </a>
+            </div>
+          )}
           {stream.createTxHash && (
             <div className="mt-3 flex items-center justify-between text-sm">
               <span className="text-muted">Create tx</span>

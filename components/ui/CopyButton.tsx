@@ -8,12 +8,18 @@ interface CopyButtonProps {
   className?: string;
 }
 
-/** A small button that copies `value` to the clipboard and shows a brief "Copied" confirmation. */
+/**
+ * A small button that copies `value` to the clipboard and shows a brief "Copied" confirmation.
+ * Pass `label="Copy link"` to use it for sharing a URL (e.g. `window.location.href`).
+ */
 export function CopyButton({ value, label = "Copy", className = "" }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
     try {
+      if (typeof navigator === "undefined" || !navigator.clipboard) {
+        return;
+      }
       await navigator.clipboard.writeText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);

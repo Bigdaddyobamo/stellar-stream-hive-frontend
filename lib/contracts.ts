@@ -61,6 +61,15 @@ export function isStreamContractConfigured(): boolean {
   return !!process.env.NEXT_PUBLIC_STREAM_CONTRACT_ID;
 }
 
+/**
+ * Non-throwing accessor for the Stream contract ID. Returns null when the
+ * contract is not configured, so UI code can conditionally render links
+ * without try/catch. Other callers should keep using getStreamContractId().
+ */
+export function getStreamContractIdOrNull(): string | null {
+  return process.env.NEXT_PUBLIC_STREAM_CONTRACT_ID || null;
+}
+
 export function isRegistryContractConfigured(): boolean {
   return !!process.env.NEXT_PUBLIC_REGISTRY_CONTRACT_ID;
 }
