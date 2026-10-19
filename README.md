@@ -175,3 +175,12 @@ Soroban RPC. Writes are signed in Freighter and then submitted to Soroban RPC.
 `/sending` and `/receiving` can be filtered by status (all / live / completed /
 cancelled) and exported to CSV. The export contains exactly the streams currently
 shown, with amounts as human-readable decimals.
+
+## Troubleshooting
+
+| Problem | Cause | Fix |
+| --- | --- | --- |
+| "Freighter not detected" | Freighter extension not installed or page loaded before it initialised | Install [Freighter](https://www.freighter.app/), reload the page, and ensure it is enabled for this site |
+| Wrong network badge (e.g. Mainnet instead of Testnet) | `NEXT_PUBLIC_STELLAR_NETWORK` does not match the network selected in Freighter | Set the variable in `.env.local` to `testnet` or `mainnet` and restart the dev server |
+| CORS errors calling the indexer API | `NEXT_PUBLIC_API_BASE_URL` points to a server that does not allow the app's origin | Verify the URL in `.env.local` and ensure the API's CORS config includes your origin |
+| "Contract not configured" | `NEXT_PUBLIC_STREAM_CONTRACT_ID` is missing or invalid | Add the deployed contract ID to `.env.local` (see `.env.example`) |
