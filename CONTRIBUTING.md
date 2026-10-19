@@ -93,12 +93,15 @@ Check these for every new or changed component:
 
 ```bash
 npm run lint
+npm run typecheck
+npm test
 npm run build
 ```
 
-Both should pass cleanly. If you touched `lib/streaming.ts` or `lib/format.ts`, please double
-check the BigInt math with a couple of manual examples — these functions are load-bearing for
-correctness across the whole app.
+All four should pass cleanly; CI runs the same commands on every pull request. If you change
+logic under `lib/`, add or update a unit test next to it. If you touched `lib/streaming.ts` or
+`lib/format.ts`, please also double check the BigInt math with a couple of manual examples —
+these functions are load-bearing for correctness across the whole app.
 
 ## Commit style
 
