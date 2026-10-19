@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { addDays } from "date-fns";
 import { fetchLatestLedgerSnapshot, type LedgerSnapshot } from "@/lib/stellar";
 import { dateToEstimatedLedger } from "@/lib/streaming";
 import { ONE_DAY_MS } from "@/lib/constants";
@@ -36,6 +37,12 @@ export function ScheduleInput({
 }: ScheduleInputProps) {
   const [reference, setReference] = useState<LedgerSnapshot | null>(null);
   const [hasCliff, setHasCliff] = useState(cliffDate !== null);
+  // The server's timezone can differ from the browser's, so the offset is only shown after mount.
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +71,8 @@ export function ScheduleInput({
     !orderError && startDate.getTime() < Date.now() - 60_000
       ? "Start date is in the past — the recipient will immediately see some balance already streamed."
       : null;
+
+  const utcOffset = isMounted ? formatUtcOffset(startDate) : null;
 
   function ledgerLabel(date: Date): string {
     if (!reference) return "";
@@ -98,9 +107,33 @@ export function ScheduleInput({
             onChange={(e) => e.target.value && onEndDateChange(new Date(e.target.value))}
             className="input-field"
           />
+          <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Duration presets">
+            {DURATION_PRESETS_DAYS.map((days) => {
+              const presetEnd = addDays(startDate, days);
+              const isActive = endDate.getTime() === presetEnd.getTime();
+              return (
+                <button
+                  key={days}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => onEndDateChange(presetEnd)}
+                  className={`rounded-lg border px-3 py-1 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border text-muted hover:border-primary/50 hover:text-primary"
+                  }`}
+                >
+                  {days}d
+                </button>
+              );
+            })}
+          </div>
           <p className="mt-1 text-xs text-muted">{ledgerLabel(endDate)}</p>
         </div>
       </div>
+      {utcOffset && (
+        <p className="text-xs text-muted">Times are in your local timezone ({utcOffset}).</p>
+      )}
 
       <div>
         <label className="flex items-center gap-2 text-sm text-muted">

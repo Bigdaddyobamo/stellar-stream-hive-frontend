@@ -126,9 +126,7 @@ export default function ReceivingPage() {
       )}
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Spinner size="lg" />
-        </div>
+        <CardSkeletonGrid />
       ) : error ? (
         <ErrorState message={error} onRetry={refetch} />
       ) : streams.length === 0 ? (

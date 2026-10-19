@@ -117,3 +117,22 @@ export function formatRate(amountPerSecond: number, symbol: string): { perSecond
     perDay: `${fmt(amountPerSecond * 86400)} ${symbol}`,
   };
 }
+
+/**
+ * Describes the UTC offset that applies at `date` as e.g. "UTC+1", "UTC-3:30" or "UTC+0",
+ * using the runtime's timezone rules for that instant. Pass `timeZone` (an IANA name) to
+ * format for a specific zone instead of the local one. Returns null if the runtime cannot
+ * produce the offset.
+ */
+export function formatUtcOffset(date: Date, timeZone?: string): string | null {
+  try {
+    const part = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
+      .formatToParts(date)
+      .find((p) => p.type === "timeZoneName")?.value;
+    if (part === undefined || !part.startsWith("GMT")) return null;
+    const offset = part.slice("GMT".length);
+    return `UTC${offset || "+0"}`;
+  } catch {
+    return null;
+  }
+}
